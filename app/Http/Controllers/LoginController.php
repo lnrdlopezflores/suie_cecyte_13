@@ -37,6 +37,7 @@ class LoginController extends Controller
                 'Control Escolar' => redirect()->route('control-escolar.dashboard'),
                 'Docente'         => redirect()->route('dashboardDocente.index'),
                 'Estudiante'      => redirect()->route('alumno.titulacion'),
+                'administrador'    => redirect()->route('usuarios.index'),
                 default           => redirect()->to('/'),
             };
         }
