@@ -174,11 +174,7 @@
                                     <p class="text-[10px] font-mono text-slate-400">{{ $al->username }}</p>
                                 </div>
                             </div>
-                            @if(!$al->grupo_id)
-                                <span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-2 py-0.5 rounded-sm uppercase">Nuevo</span>
-                            @else
-                                <span class="bg-slate-200 text-slate-600 text-[9px] font-bold px-2 py-0.5 rounded-sm uppercase">{{ $al->semestre }}°{{ $al->grupo }}</span>
-                            @endif
+                            <span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wide">Sin Grupo</span>
                         </label>
                     @empty
                         <p class="p-4 text-center text-slate-400 font-medium">No hay alumnos vigentes pendientes por asignar.</p>
