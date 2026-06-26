@@ -16,8 +16,8 @@
                 <div>
                     <label class="block font-bold text-slate-500 uppercase mb-1">Periodo Evaluatorio</label>
                     <select name="periodo" class="bg-slate-50 border border-slate-300 rounded-lg p-2 font-medium focus:ring-1 focus:ring-indigo-600 focus:outline-hidden">
-                        <option value="Parcial 2">Parcial 2</option>
                         <option value="Parcial 1">Parcial 1</option>
+                        <option value="Parcial 2">Parcial 2</option>    
                         <option value="Parcial 3">Parcial 3 / Final</option>
                     </select>
                 </div>

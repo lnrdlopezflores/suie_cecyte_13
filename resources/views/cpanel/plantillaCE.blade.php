@@ -56,7 +56,7 @@
                         <a href="{{ route('materias.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors hover:bg-slate-800 hover:text-slate-200">
                             <span class="material-icons-round text-sm">auto_stories</span> Materias
                         </a>
-                        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors hover:bg-slate-800 hover:text-slate-200">
+                        <a href="{{ route('cargas.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors hover:bg-slate-800 hover:text-slate-200">
                             <span class="material-icons-round text-sm">auto_stories</span> Carga Académica
                         </a>
                     </nav>

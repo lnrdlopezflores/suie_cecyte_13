@@ -38,7 +38,7 @@
                     <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-3 block mb-2">Control de Accesos</span>
                     <nav class="space-y-1">
                         <a href="{{ route('usuarios.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors {{ request()->routeIs('usuarios.index') ? 'bg-[#841B44] text-white' : 'hover:bg-slate-800 hover:text-slate-200' }}">
-                            <span class="material-icons-round text-sm">supervised_user_circle</span> Catálogo de Usuarios
+                            <span class="material-icons-round text-sm">supervised_user_circle</span> Usuarios
                         </a>
                     </nav>
                 </div>
@@ -46,7 +46,7 @@
                 <div>
                     <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-3 block mb-2">Estructura Escolar</span>
                     <nav class="space-y-1"> 
-                        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-800">
+                        <a href="{{ route('AdAlumnos.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors {{ request()->routeIs('AdAlumnos.index') ? 'bg-[#841B44] text-white' : 'hover:bg-slate-800 hover:text-slate-200' }}">
                             <span class="material-icons-round text-sm">school</span> Alumnos y Matrícula
                         </a>
                         <a href="{{ route('docentes.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors {{ request()->routeIs('docentes.index') ? 'bg-[#841B44] text-white' : 'hover:bg-slate-800 hover:text-slate-200' }}">

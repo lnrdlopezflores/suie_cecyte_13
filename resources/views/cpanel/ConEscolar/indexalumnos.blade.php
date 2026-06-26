@@ -1,7 +1,5 @@
 @extends('cpanel/plantillaCE')
-
-@section('title', 'Consulta de Matrícula Estudiantil')
-
+@section('title', 'Matrícula Estudiantil')
 @section('content')
 <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
 
