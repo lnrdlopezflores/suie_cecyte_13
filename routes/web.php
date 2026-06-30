@@ -20,7 +20,6 @@ Route::get('/', function () {
     return view('cpanel/home/landing');
 });
 
-// Cambia tu ruta GET /login por esta:
 Route::get('/login', [LoginController::class, 'redirectByRol'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.post');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -58,11 +57,7 @@ Route::middleware(['auth', 'rol:Docente'])->group(function () {
 
 Route::resource('/finanzas/pagos', ValidarPagoController::class)->names('contador.pagos');
 Route::get('/finanzas/pagos/{id}/revisar', [ValidarPagoController::class, 'revisar'])->name('contador.pagos.revisar');
-// Procesar aprobación y timbrado de recibo institucional
 Route::post('/finanzas/pagos/{id}/validar', [ValidarPagoController::class, 'validar'])->name('contador.pagos.validar');
 
-Route::get('/orientacion/asistencias', [AsistenciaController::class, 'reporteCritico'])
-    ->name('asistencias.criticas');
-    
-Route::post('/orientacion/asistencias/alerta', [AsistenciaController::class, 'enviarAlertaTutor'])
-    ->name('asistencias.alerta-tutor');
+Route::get('/orientacion/asistencias', [AsistenciaController::class, 'reporteCritico'])->name('asistencias.criticas');
+Route::post('/orientacion/asistencias/alerta', [AsistenciaController::class, 'enviarAlertaTutor'])->name('asistencias.alerta-tutor');
