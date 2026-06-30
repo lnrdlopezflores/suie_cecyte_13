@@ -14,7 +14,7 @@
             
             <div class="flex items-center space-x-4">
                 <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center p-1 border border-slate-200 overflow-hidden shrink-0">
-                    <img src="/assets/images/logo.png" alt="Logo Institución" class="w-full h-full object-contain">
+                    <img src="{{ asset('assets/images/logo.png') }}" alt="Logo Institución" class="w-full h-full object-contain">
                 </div>
                 <div class="border-l border-slate-300 pl-4">
                     <h1 class="text-xl font-black tracking-wider leading-none text-[#841B44]">SUIE</h1>
@@ -90,7 +90,6 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-3xs space-y-4">
                 <div class="w-10 h-10 rounded-xl bg-amber-50 text-[#E66711] border border-amber-100 flex items-center justify-center">
                     <span class="material-icons-round">gavel</span>
@@ -120,7 +119,6 @@
                     Validación física y digital de expedientes de titulación, emisión de actas oficiales de calificaciones, constancias y administración matricular integral.
                 </p>
             </div>
-
         </div>
     </section>
 
@@ -131,8 +129,11 @@
         </div>
     </footer>
 
-    <div id="loginModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 transition-opacity opacity-0 pointer-events-none duration-300">
-        <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-6 transform scale-95 transition-transform duration-300 ease-out" id="loginBox">
+<!-- MODAL DE LOGIN (Modificaciones añadidas para manejo de persistencia y errores) -->
+    <div id="loginModal" 
+         class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 transition-opacity duration-300 {{ $errors->has('username') ? 'opacity-100' : 'opacity-0 pointer-events-none' }}">
+        
+        <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-6 transform transition-transform duration-300 ease-out {{ $errors->has('username') ? 'scale-100' : 'scale-95' }}" id="loginBox">
             
             <div class="flex justify-between items-center border-b border-slate-100 pb-4">
                 <div>
@@ -144,18 +145,29 @@
                 </button>
             </div>
 
-            <!-- Formulario Modificado (Sin el select de Departamento / Rol) -->
-            <form class="space-y-4 text-xs" action="/login" method="POST">
-                <!-- Token de seguridad obligatorio en Laravel -->
-                <input type="hidden" name="_token" value="VALUE_DEL_TOKEN_CSRF"> 
+            <!-- ALERTA DINÁMICA DE LARAVEL -->
+            @error('username')
+                <div class="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-xl text-xs flex items-start gap-2 animate-pulse">
+                    <span class="material-icons-round text-sm mt-0.5">error</span>
+                    <p class="font-semibold">{{ $message }}</p>
+                </div>
+            @enderror
+
+            <!-- Formulario de Envío -->
+            <form class="space-y-4 text-xs" action="{{ route('login') }}" method="POST">
+                @csrf
 
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Clave de Empleado o Usuario</label>
-                    <input type="text" name="username" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 font-medium focus:ring-1 focus:ring-[#841B44] focus:outline-hidden" placeholder="Ej: ADM-2405">
+                    <input type="text" name="username" value="{{ old('username') }}" required 
+                           class="w-full bg-slate-50 border @error('username') border-rose-400 focus:ring-rose-500 @else border-slate-300 focus:ring-[#841B44] @enderror rounded-xl p-3 font-medium focus:outline-hidden" 
+                           placeholder="Ej: ADM-2405">
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Contraseña</label>
-                    <input type="password" name="password" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 font-medium focus:ring-1 focus:ring-[#841B44] focus:outline-hidden" placeholder="••••••••">
+                    <input type="password" name="password" required 
+                           class="w-full bg-slate-50 border @error('username') border-rose-400 focus:ring-rose-500 @else border-slate-300 focus:ring-[#841B44] @enderror rounded-xl p-3 font-medium focus:outline-hidden" 
+                           placeholder="••••••••">
                 </div>
                 <div class="pt-2">
                     <button type="submit" class="w-full py-3.5 bg-[#841B44] hover:bg-[#6b1536] text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer">
@@ -178,17 +190,22 @@
             const box = document.getElementById('loginBox');
             
             if (modal.classList.contains('pointer-events-none')) {
-                // Mostrar modal
                 modal.classList.remove('pointer-events-none', 'opacity-0');
                 box.classList.remove('scale-95');
                 box.classList.add('scale-100');
             } else {
-                // Ocultar modal
                 modal.classList.add('pointer-events-none', 'opacity-0');
                 box.classList.remove('scale-100');
                 box.classList.add('scale-95');
             }
         }
+
+        // MODIFICACIÓN: Si la sesión reporta errores de validación, forzar apertura del modal al recargar
+        @if($errors->any())
+            window.addEventListener('DOMContentLoaded', (event) => {
+                toggleLoginModal();
+            });
+        @endif
     </script>
 
 </body>

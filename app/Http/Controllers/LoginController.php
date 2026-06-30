@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB; // <-- AÑADE ESTA LÍNEA
+
 
 class LoginController extends Controller
 {
@@ -19,33 +21,59 @@ class LoginController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        // 2. Intentar autenticar al usuario (verificando que esté activo)
-        // Pasamos 'username' y 'password'. Auth::attempt se encarga de buscar el usuario
-        // y pasar el 'password' por el validador de Bcrypt de forma automática.
-        if (Auth::attempt(['username' => $credentials['username'], 'password' => $credentials['password'], 'activo' => 1])) {
-            
-            // Regenerar la sesión por seguridad frente a fijación de sesiones
-            $request->session()->regenerate();
+        // 2. Buscar primero al usuario para auditar su estatus
+        $user = DB::table('usuarios')->where('username', $credentials['username'])->first();
 
-            // 3. Obtener el usuario autenticado
-            $user = Auth::user();
+        if ($user) {
+            // Si el usuario existe pero está dado de baja (activo = 0)
+            if (!$user->activo) {
+                throw ValidationException::withMessages([
+                    'username' => ['El acceso a esta cuenta ha sido suspendido. Contacte al Administrador Central.'],
+                ]);
+            }
 
-            // 4. Redirección automática por Match de Rol
-            return match ($user->rol) {
+            // 3. Si está activo, intentar autenticar con las credenciales completas
+            if (Auth::attempt(['username' => $credentials['username'], 'password' => $credentials['password']])) {
+                
+                $request->session()->regenerate();
+                $userAuth = Auth::user();
+
+                // 4. Redirección por Match de Rol
+                return match ($userAuth->rol) {
+                    'Coordinador'     => redirect()->route('coordinacion.dashboard'),
+                    'Orientador'      => redirect()->route('orientacion.asistencias'),
+                    'Control Escolar' => redirect()->route('control-escolar.dashboard'),
+                    'Docente'         => redirect()->route('dashboardDocente.index'),
+                    'Estudiante'      => redirect()->route('indexalumnos.index'),
+                    'administrador'   => redirect()->route('usuarios.index'),
+                    default           => redirect()->to('/'),
+                };
+            }
+        }
+
+        // 5. Si no existe el usuario o la contraseña es errónea
+        throw ValidationException::withMessages([
+            'username' => ['La clave de usuario o contraseña introducida es incorrecta.'],
+        ]);
+    }
+
+    public function redirectByRol()
+    {
+        // Si el usuario ya está autenticado, hacemos el Match de redirección
+        if (Auth::check()) {
+            return match (Auth::user()->rol) {
                 'Coordinador'     => redirect()->route('coordinacion.dashboard'),
                 'Orientador'      => redirect()->route('orientacion.asistencias'),
                 'Control Escolar' => redirect()->route('control-escolar.dashboard'),
                 'Docente'         => redirect()->route('dashboardDocente.index'),
-                'Estudiante'      => redirect()->route('alumno.titulacion'),
-                'administrador'    => redirect()->route('usuarios.index'),
+                'Estudiante'      => redirect()->route('indexalumnos.index'),
+                'administrador'   => redirect()->route('usuarios.index'),
                 default           => redirect()->to('/'),
             };
         }
 
-        // 5. Si la autenticación falla o está inactivo
-        throw ValidationException::withMessages([
-            'username' => ['Las credenciales proporcionadas no coinciden con nuestros registros o el usuario está inactivo.'],
-        ]);
+        // Si es un invitado (no está logueado), lo mandamos a la landing page principal
+        return redirect()->to('/');
     }
 
     /**
