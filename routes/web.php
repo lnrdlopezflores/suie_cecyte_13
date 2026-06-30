@@ -13,6 +13,8 @@ use App\Http\Controllers\CargaAcademicaController;
 use App\Http\Controllers\AlumnosAdminController;
 use App\Http\Controllers\AlumnoPortalController;
 use App\Http\Controllers\AlumnoMateriasController;
+use App\Http\Controllers\AlumnoPagosController;
+use App\Http\Controllers\ValidarPagoController;
 
 Route::get('/', function () {
     return view('cpanel/home/landing');
@@ -35,6 +37,8 @@ Route::middleware(['auth', 'rol:administrador'])->group(function () {
 Route::middleware(['auth', 'rol:Estudiante'])->group(function () {
     Route::resource('/alumno/', AlumnoPortalController::class)->names('indexalumnos');
     Route::resource('/alumno/materias', AlumnoMateriasController::class)->names('indexmaterias');
+    Route::resource('/alumno/pagos', AlumnoPagosController::class)->names('alumnoPagos');
+    Route::post('/alumno/pagos/reportar', [AlumnoPagosController::class, 'store'])->name('alumno.pagos.store');
 });
 
 Route::middleware(['auth', 'rol:Control Escolar'])->group(function () {
@@ -51,3 +55,8 @@ Route::middleware(['auth', 'rol:Docente'])->group(function () {
     Route::get('/docente/asistencia/tomar/{cargaId}', [AsistenciaController::class, 'tomarAsistencia'])->name('asistencia.tomar');  
     Route::post('/docente/asistencia/guardar/{cargaId}', [AsistenciaController::class, 'guardarAsistencia'])->name('asistencia.guardar');
 });
+
+Route::resource('/finanzas/pagos', ValidarPagoController::class)->names('contador.pagos');
+Route::get('/finanzas/pagos/{id}/revisar', [ValidarPagoController::class, 'revisar'])->name('contador.pagos.revisar');
+// Procesar aprobación y timbrado de recibo institucional
+Route::post('/finanzas/pagos/{id}/validar', [ValidarPagoController::class, 'validar'])->name('contador.pagos.validar');

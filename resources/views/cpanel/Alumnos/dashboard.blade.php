@@ -21,7 +21,7 @@
         </div>
         <div class="shrink-0 bg-white/10 px-4 py-2 rounded-xl backdrop-blur-xs border border-white/10">
             <p class="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Ciclo Escolar Activo</p>
-            <p class="text-sm font-black text-white font-mono">2026-A</p>
+            <p class="text-sm font-black text-white font-mono">2026-2027</p>
         </div>
     </div>
 
