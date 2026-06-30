@@ -42,7 +42,7 @@ class LoginController extends Controller
                 return match ($userAuth->rol) {
                     'Coordinador'     => redirect()->route('coordinacion.dashboard'),
                     'Orientador'      => redirect()->route('orientacion.asistencias'),
-                    'Control Escolar' => redirect()->route('control-escolar.dashboard'),
+                    'Control Escolar' => redirect()->route('alumnos.index'),
                     'Docente'         => redirect()->route('dashboardDocente.index'),
                     'Estudiante'      => redirect()->route('indexalumnos.index'),
                     'administrador'   => redirect()->route('usuarios.index'),
@@ -64,7 +64,7 @@ class LoginController extends Controller
             return match (Auth::user()->rol) {
                 'Coordinador'     => redirect()->route('coordinacion.dashboard'),
                 'Orientador'      => redirect()->route('orientacion.asistencias'),
-                'Control Escolar' => redirect()->route('control-escolar.dashboard'),
+                'Control Escolar' => redirect()->route('alumnos.index'),
                 'Docente'         => redirect()->route('dashboardDocente.index'),
                 'Estudiante'      => redirect()->route('indexalumnos.index'),
                 'administrador'   => redirect()->route('usuarios.index'),
