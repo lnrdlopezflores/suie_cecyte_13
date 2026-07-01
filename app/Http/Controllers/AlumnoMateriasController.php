@@ -21,7 +21,7 @@ class AlumnoMateriasController extends Controller
             ->first();
 
         if (!$alumno || is_null($alumno->grupo_id)) {
-            return view('alumno.materias_index', [
+            return view('cpanel/alumnos/materiaalumno', [
                 'materias' => [],
                 'grupoInfo' => null
             ]);

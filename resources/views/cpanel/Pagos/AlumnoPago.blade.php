@@ -34,9 +34,9 @@
         <div class="lg:col-span-2 space-y-4">
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-3xs">
                 <h2 class="text-base font-bold text-slate-900 flex items-center gap-2 mb-1">
-                    <span class="material-icons-round text-[#841B44]">receipt_long</span> Estado de Cuenta y Cobros
+                    <span class="material-icons-round text-[#841B44]">receipt_long</span> Control de Pagos
                 </h2>
-                <p class="text-slate-500 text-[11px] mb-4">Revisa el listado de tus conceptos asignados, montos institucionales y el estatus de revisión.</p>
+                <p class="text-slate-500 text-[11px] mb-4">Revisa el listado de tus Pagos, montos institucionales y el estatus de revisión.</p>
                 
                 <div class="overflow-x-auto rounded-xl border border-slate-200">
                     <table class="w-full text-left border-collapse">
