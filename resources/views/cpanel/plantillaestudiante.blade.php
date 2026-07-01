@@ -6,6 +6,7 @@
     <title>Portal Estudiantil SUIE - @yield('title')</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link rel="icon" href="/assets/images/logo.png" type="icon">
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 h-screen flex flex-col overflow-hidden">
 

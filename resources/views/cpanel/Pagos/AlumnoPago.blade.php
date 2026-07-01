@@ -1,12 +1,17 @@
 @extends('cpanel/plantillaestudiante')
 @section('title', 'Control de Pagos')
+@section('title', 'Control de Pagos')
+
+{{-- SECCIÓN COMPACTA: Inyección dinámica del Grado y Grupo en el Topbar --}}
 @section('grupo_badge')
-    @if(isset($infoAlumno->semestre))
+    @if(isset($infoAlumno) && !empty($infoAlumno->semestre))
         {{ $infoAlumno->semestre }}° Semestre — Grupo "{{ $infoAlumno->grupo }}"
     @else
         Aspirante / Sin Grupo
     @endif
 @endsection
+
+{{-- SECCIÓN PRINCIPAL: Cuerpo de trabajo del módulo de pagos --}}
 @section('content')
 <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6 text-xs">
 

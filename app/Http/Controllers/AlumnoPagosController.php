@@ -15,15 +15,36 @@ class AlumnoPagosController extends Controller
     {
         $userId = Auth::id();
 
-        // Recuperar el registro del alumno logueado
-        $alumno = DB::table('alumnos')->where('usuario_id', $userId)->first();
+        // 1. Buscamos al alumno uniendo la tabla grupos para traer semestre y grupo
+        $infoAlumno = DB::table('alumnos')
+            ->leftJoin('grupos', 'alumnos.grupo_id', '=', 'grupos.id')
+            ->where('alumnos.usuario_id', $userId)
+            ->select('alumnos.id', 'grupos.semestre', 'grupos.grupo') // Jalamos los campos necesarios
+            ->first();
 
-        // Si el usuario no tiene perfil de alumno aún
-        $pagos = $alumno 
-            ? DB::table('pagos')->where('alumno_id', $alumno->id)->orderBy('created_at', 'desc')->get()
-            : collect([]);
+        // 2. Traemos sus pagos usando el ID del alumno
+        $pagos = collect([]);
+        if ($infoAlumno) {
+            $pagos = DB::table('pagos')
+                ->where('alumno_id', $infoAlumno->id)
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-        return view('cpanel/Pagos/AlumnoPago', compact('pagos'));
+            // Tu lógica de descifrado...
+            $pagos->transform(function ($pago) {
+                try {
+                    $pago->referencia_bancaria = decrypt($pago->referencia_bancaria);
+                    $pago->monto = decrypt($pago->monto);
+                } catch (\Exception $e) {
+                    // Control de datos legacy
+                }
+                return $pago;
+            });
+        }
+
+        // 3. ENVIAR AMBAS VARIABLES A LA VISTA
+        // Es CRUCIAL que envíes 'infoAlumno' para que el layout pueda leerlo en la barra superior
+        return view('cpanel/Pagos/AlumnoPago', compact('pagos', 'infoAlumno'));
     }
 
     /**

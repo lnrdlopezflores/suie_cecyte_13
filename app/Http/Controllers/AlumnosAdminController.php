@@ -5,18 +5,19 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Contracts\Encryption\DecryptException;
 
 class AlumnosAdminController extends Controller
 {
     /**
-     * Muestra el catálogo de alumnos con filtros para el administrador.
+     * Muestra el catálogo de alumnos con filtros para el administrador (Descifrado dinámico).
      */
     public function index(Request $request)
     {
         $buscar = $request->input('buscar');
         $activo = $request->input('activo');
 
-        // Construcción de la consulta unificando alumnos, usuarios y grupos
         $query = DB::table('alumnos')
             ->join('usuarios', 'alumnos.usuario_id', '=', 'usuarios.id')
             ->leftJoin('grupos', 'alumnos.grupo_id', '=', 'grupos.id')
@@ -28,41 +29,50 @@ class AlumnosAdminController extends Controller
                 'alumnos.apellido_materno',
                 'alumnos.nombre_tutor',
                 'alumnos.telefono_tutor',
-                'usuarios.username', // Matrícula
+                'usuarios.username', // Matrícula (No se cifra para poder buscar por ella)
                 'usuarios.activo',
                 'grupos.semestre',
                 'grupos.grupo',
                 'grupos.especialidad'
             );
 
-        // Filtro de auditoría por estatus de cuenta (activo/inactivo)
         if ($activo !== null && $activo !== '') {
             $query->where('usuarios.activo', $activo);
         }
 
-        // Barra de búsqueda descriptiva
+        // NOTA: La búsqueda por nombre/apellido por LIKE sql ordinario no funcionará con datos cifrados.
+        // Se mantiene la búsqueda limpia por matrícula (username).
         if (!empty($buscar)) {
-            $query->where(function ($q) use ($buscar) {
-                $q->where('alumnos.nombre', 'LIKE', '%' . $buscar . '%')
-                  ->orWhere('alumnos.apellido_paterno', 'LIKE', '%' . $buscar . '%')
-                  ->orWhere('usuarios.username', 'LIKE', '%' . $buscar . '%');
-            });
+            $query->where('usuarios.username', 'LIKE', '%' . $buscar . '%');
         }
 
-        // Ordenar alfabéticamente por apellido paterno
-        $alumnos = $query->orderBy('alumnos.apellido_paterno', 'asc')->paginate(15);
+        $alumnosPaginados = $query->orderBy('alumnos.id', 'desc')->paginate(15);
 
-        return view('cpanel/Alumnos/indexalumnos', compact('alumnos'));
+        // Transformamos los resultados del paginador para descifrar los strings
+        $alumnosPaginados->getCollection()->transform(function ($alumno) {
+            try {
+                $alumno->nombre = decrypt($alumno->nombre);
+                $alumno->apellido_paterno = decrypt($alumno->apellido_paterno);
+                $alumno->apellido_materno = $alumno->apellido_materno ? decrypt($alumno->apellido_materno) : null;
+                $alumno->nombre_tutor = decrypt($alumno->nombre_tutor);
+                $alumno->telefono_tutor = decrypt($alumno->telefono_tutor);
+            } catch (DecryptException $e) {
+                // Si hay datos viejos en la BD sin cifrar, los muestra tal cual para evitar romper la vista
+                $alumno->nombre = $alumno->nombre . ' (Sin Cifrar)';
+            }
+            return $alumno;
+        });
+
+        return view('cpanel/Alumnos/indexalumnos', ['alumnos' => $alumnosPaginados]);
     }
 
     public function create()
     {
-        // Removido 'usuarios.email' para acoplarse al esquema real de la base de datos
         $usuariosDisponibles = DB::table('usuarios')
             ->leftJoin('alumnos', 'usuarios.id', '=', 'alumnos.usuario_id')
-            ->where('usuarios.rol', '=', 'Estudiante') // Asegura que coincida con tu ENUM (Ej: Estudiante)
+            ->where('usuarios.rol', '=', 'Estudiante')
             ->whereNull('alumnos.usuario_id')
-            ->select('usuarios.id', 'usuarios.username', 'usuarios.created_at') // Limpio
+            ->select('usuarios.id', 'usuarios.username', 'usuarios.created_at')
             ->orderBy('usuarios.username', 'asc')
             ->get();
 
@@ -70,7 +80,7 @@ class AlumnosAdminController extends Controller
     }
 
     /**
-     * Almacena el expediente del alumno en la base de datos (con grupo_id por defecto NULL).
+     * Almacena el expediente aplicando cifrado AES-256 a los datos personales.
      */
     public function store(Request $request)
     {
@@ -85,19 +95,19 @@ class AlumnosAdminController extends Controller
             'usuario_id.unique' => 'Esta cuenta credencial ya tiene un expediente matricular asociado.'
         ]);
 
-        // Insertar registro con Query Builder. El campo grupo_id se queda como null de forma nativa.
+        // Guardar cifrando los datos mediante la APP_KEY del sistema
         DB::table('alumnos')->insert([
             'usuario_id'       => $request->input('usuario_id'),
-            'grupo_id'         => null, // Inscribe sin grupo asignado inicialmente
-            'nombre'           => $request->input('nombre'),
-            'apellido_paterno' => $request->input('apellido_paterno'),
-            'apellido_materno' => $request->input('apellido_materno'),
-            'nombre_tutor'     => $request->input('nombre_tutor'),
-            'telefono_tutor'   => $request->input('telefono_tutor'),
+            'grupo_id'         => null,
+            'nombre'           => encrypt($request->input('nombre')),
+            'apellido_paterno' => encrypt($request->input('apellido_paterno')),
+            'apellido_materno' => $request->input('apellido_materno') ? encrypt($request->input('apellido_materno')) : null,
+            'nombre_tutor'     => encrypt($request->input('nombre_tutor')),
+            'telefono_tutor'   => encrypt($request->input('telefono_tutor')),
         ]);
 
         return redirect()
             ->route('AdAlumnos.index')
-            ->with('success', 'El expediente del alumno ha sido guardado de manera correcta.');
+            ->with('success', 'El expediente del alumno ha sido guardado y cifrado de manera correcta.');
     }
 }

@@ -90,27 +90,41 @@
                 <tbody class="divide-y divide-slate-200 text-slate-700">
                     @forelse($pagos as $pago)
                         <tr class="hover:bg-slate-50/40 transition-colors">
-                            <!-- Folio Interno -->
                             <td class="p-4 text-center font-mono font-bold text-slate-400">#{{ $pago->id }}</td>
                             
-                            <!-- Datos del Alumno -->
                             <td class="p-4">
-                                <div class="font-bold text-slate-900">{{ $pago->alumno_nombre }} {{ $pago->alumno_paterno }}</div>
+                                <div class="font-bold text-slate-900">
+                                    {{-- Si el nombre contiene la palabra (Plain) debido al catch, la removemos visualmente --}}
+                                    {{ str_replace(' (Plain)', '', $pago->alumno_nombre) }} 
+                                    {{ $pago->alumno_paterno }}
+                                </div>
                                 <div class="text-[10px] text-slate-400 font-mono mt-0.5">Matrícula: {{ $pago->username }}</div>
                             </td>
                             
-                            <!-- Concepto -->
                             <td class="p-4 font-medium text-slate-800">{{ $pago->concepto }}</td>
                             
-                            <!-- Monto -->
-                            <td class="p-4 text-right font-mono font-black text-slate-900">${{ number_format($pago->monto, 2) }}</td>
-                            
-                            <!-- Referencia -->
-                            <td class="p-4 font-mono uppercase">
-                                <span class="bg-slate-100 px-2 py-0.5 rounded-sm border border-slate-200/60">{{ $pago->referencia_bancaria }}</span>
+                            <td class="p-4 text-right font-mono font-black text-slate-900">
+                                @if(is_numeric($pago->monto))
+                                    ${{ number_format($pago->monto, 2) }}
+                                @else
+                                    {{-- Si el monto falló y es un string de error, ponemos un guión o valor plano --}}
+                                    ${{ is_numeric(str_replace(' (Legacy)', '', $pago->monto)) ? number_format(str_replace(' (Legacy)', '', $pago->monto), 2) : '0.00' }}
+                                @endif
                             </td>
                             
-                            <!-- Estado -->
+                            <td class="p-4 font-mono uppercase">
+                                {{-- Si la referencia es un hash gigante corrupto Base64 (mide más de 60 caracteres), ocultamos el hash --}}
+                                @if(strlen($pago->referencia_bancaria) > 60)
+                                    <span class="bg-amber-50 text-amber-700 px-2 py-0.5 rounded-sm border border-amber-200 font-sans font-bold text-[10px]">
+                                        Ref. Cifrada Rota
+                                    </span>
+                                @else
+                                    <span class="bg-slate-100 px-2 py-0.5 rounded-sm border border-slate-200/60 text-slate-800">
+                                        {{ str_replace(' (LEGACY)', '', str_replace(' (Legacy)', '', $pago->referencia_bancaria)) }}
+                                    </span>
+                                @endif
+                            </td>
+                            
                             <td class="p-4 text-center">
                                 @if($pago->estatus == 'Pagado')
                                     <span class="inline-flex items-center text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-sm">
@@ -127,10 +141,9 @@
                                 @endif
                             </td>
                             
-                            <!-- Botón de Acción -->
                             <td class="p-4 text-center">
                                 <a href="{{ route('contador.pagos.revisar', $pago->id) }}" 
-                                   class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#841B44] hover:bg-[#6b1536] text-white font-bold rounded-lg shadow-3xs transition-colors">
+                                class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#841B44] hover:bg-[#6b1536] text-white font-bold rounded-lg shadow-3xs transition-colors">
                                     <span class="material-icons-round text-xs">pageview</span> Revisar
                                 </a>
                             </td>

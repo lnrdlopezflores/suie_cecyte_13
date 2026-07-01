@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule; // <-- AÑADE ESTA LÍNEA
+use Illuminate\Validation\Rule;
+use Illuminate\Contracts\Encryption\DecryptException;
 
-class CargaAcademicaController extends Controller
+class CargaAcademicaController
 {
     /**
-     * Lista toda la planeación de la carga académica institucional.
+     * Lista toda la planeación de la carga académica institucional (Descifrado de docentes).
      */
     public function index(Request $request)
     {
@@ -18,7 +20,7 @@ class CargaAcademicaController extends Controller
         // Construcción de la query relacional unificada
         $query = DB::table('carga_academica')
             ->join('docentes', 'carga_academica.docente_id', '=', 'docentes.id')
-            ->join('usuarios', 'docentes.usuario_id', '=', 'usuarios.id') // Para traer el username (clave de empleado)
+            ->join('usuarios', 'docentes.usuario_id', '=', 'usuarios.id') 
             ->join('materias', 'carga_academica.materia_id', '=', 'materias.id')
             ->join('grupos', 'carga_academica.grupo_id', '=', 'grupos.id')
             ->select(
@@ -27,51 +29,78 @@ class CargaAcademicaController extends Controller
                 'carga_academica.horario',
                 'docentes.nombre as docente_nombre',
                 'docentes.apellido_paterno as docente_apellido',
-                'usuarios.username',
+                'usuarios.username', // Clave de empleado (Texto plano)
                 'materias.nombre as materia_nombre',
                 'materias.clave',
                 'grupos.semestre',
                 'grupos.grupo'
             );
 
-        // Si se define un criterio en la barra de búsqueda
+        // Ajustamos la búsqueda: Se remueve el LIKE de campos de texto de docentes ya que están cifrados.
+        // Ahora busca de forma indexada por Clave de Empleado, Materia o Aula.
         if (!empty($buscar)) {
             $query->where(function ($q) use ($buscar) {
-                $q->where('docentes.nombre', 'LIKE', '%' . $buscar . '%')
-                  ->orWhere('docentes.apellido_paterno', 'LIKE', '%' . $buscar . '%')
+                $q->where('usuarios.username', 'LIKE', '%' . $buscar . '%')
                   ->orWhere('materias.nombre', 'LIKE', '%' . $buscar . '%')
                   ->orWhere('carga_academica.aula', 'LIKE', '%' . $buscar . '%');
             });
         }
 
-        // Ordenamos por semestre del grupo y alfabéticamente por apellido del maestro
-        $cargas = $query->orderBy('grupos.semestre', 'asc')
-                        ->orderBy('docentes.apellido_paterno', 'asc')
-                        ->paginate(15);
+        // Paginación estable ordenando por ID o semestre
+        $cargasPaginadas = $query->orderBy('grupos.semestre', 'asc')
+                                 ->orderBy('carga_academica.id', 'desc')
+                                 ->paginate(15);
 
-        return view('cpanel/ConEscolar/indexcarga', compact('cargas'));
+        // Iteramos la colección para descifrar la identidad del docente en tiempo de ejecución
+        $cargasPaginadas->getCollection()->transform(function ($carga) {
+            try {
+                $carga->docente_nombre = decrypt($carga->docente_nombre);
+                $carga->docente_apellido = decrypt($carga->docente_apellido);
+            } catch (DecryptException $e) {
+                // Mitigación de errores: Soporte para registros creados antes del cifrado
+                $carga->docente_nombre = $carga->docente_nombre . ' (Plain)';
+            }
+            return $carga;
+        });
+
+        return view('cpanel/ConEscolar/indexcarga', ['cargas' => $cargasPaginadas]);
     }
 
     public function create()
     {
-        // 1. Catálogo de docentes con su matrícula
-        $docentes = DB::table('docentes')
+        // 1. Catálogo de docentes uniendo credenciales
+        $docentesRaw = DB::table('docentes')
             ->join('usuarios', 'docentes.usuario_id', '=', 'usuarios.id')
             ->select('docentes.id', 'docentes.nombre', 'docentes.apellido_paterno', 'usuarios.username')
-            ->orderBy('docentes.apellido_paterno', 'asc')
+            ->orderBy('usuarios.username', 'asc')
             ->get();
 
-        // 2. Catálogo de materias activas
+        // Desciframos la lista de docentes para que el Select/Dropdown del formulario sea legible
+        $docentesRaw->transform(function ($docente) {
+            try {
+                $docente->nombre = decrypt($docente->nombre);
+                $docente->apellido_paterno = decrypt($docente->apellido_paterno);
+            } catch (DecryptException $e) {
+                // Preservación si hay datos en texto plano
+            }
+            return $docente;
+        });
+
+        // 2. Catálogo de materias activas (No se cifran)
         $materias = DB::table('materias')->orderBy('nombre', 'asc')->get();
 
-        // 3. Catálogo de grupos regulares vigentes
+        // 3. Catálogo de grupos regulares vigentes (No se cifran)
         $grupos = DB::table('grupos')
             ->where('estatus_egreso', 'Regular')
             ->orderBy('semestre', 'asc')
             ->orderBy('grupo', 'asc')
             ->get();
 
-        return view('cpanel/ConEscolar/createcarga', compact('docentes', 'materias', 'grupos'));
+        return view('cpanel/ConEscolar/createcarga', [
+            'docentes' => $docentesRaw, 
+            'materias' => $materias, 
+            'grupos'   => $grupos
+        ]);
     }
 
     /**
@@ -79,7 +108,6 @@ class CargaAcademicaController extends Controller
      */
     public function store(Request $request)
     {
-        // Validación estricta cruzando la regla de unicidad combinada en base de datos
         $request->validate([
             'docente_id' => ['required', 'integer', 'exists:docentes,id'],
             'materia_id' => ['required', 'integer', 'exists:materias,id'],
@@ -87,7 +115,7 @@ class CargaAcademicaController extends Controller
                 'required', 
                 'integer', 
                 'exists:grupos,id',
-                // Evita que se repita la combinación docente-materia-grupo en la base de datos
+                // Sigue operativo ya que evalúa IDs numéricos, no strings cifrados
                 Rule::unique('carga_academica')->where(function ($query) use ($request) {
                     return $query->where('docente_id', $request->input('docente_id'))
                                  ->where('materia_id', $request->input('materia_id'))
@@ -100,7 +128,7 @@ class CargaAcademicaController extends Controller
             'grupo_id.unique' => 'Error: Esta clase ya se encuentra asignada. El docente ya imparte esta asignatura al grupo seleccionado.'
         ]);
 
-        // Insertar registro mediante Query Builder
+        // Guardado de la relación (Las llaves foráneas y metadatos se quedan legibles para cruces rápidos)
         DB::table('carga_academica')->insert([
             'docente_id' => $request->input('docente_id'),
             'materia_id' => $request->input('materia_id'),
