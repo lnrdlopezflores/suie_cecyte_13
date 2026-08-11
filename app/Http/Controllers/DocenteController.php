@@ -38,19 +38,30 @@ class DocenteController extends Controller
         $docentesPaginados = $query->orderBy('usuarios.username', 'asc')->paginate(15);
 
         // Iteramos sobre la colección del paginador para descifrar en tiempo de ejecución
-        $docentesPaginados->getCollection()->transform(function ($docente) {
-            try {
-                $docente->nombre = decrypt($docente->nombre);
-                $docente->apellido_paterno = decrypt($docente->apellido_paterno);
-                $docente->apellido_materno = $docente->apellido_materno ? decrypt($docente->apellido_materno) : null;
-                $docente->correo = $docente->correo ? decrypt($docente->correo) : null;
-                $docente->telefono = $docente->telefono ? decrypt($docente->telefono) : null;
-            } catch (DecryptException $e) {
-                // Soporte de compatibilidad: si hay datos viejos en la BD, no rompe la vista
-                $docente->nombre = $docente->nombre . ' (Sin Cifrar)';
+        // En DocenteController.php -> index()
+
+$docentesPaginados->getCollection()->transform(function ($docente) {
+    try {
+        // Verificamos si el string tiene la estructura de un JSON cifrado de Laravel (empieza con 'ey' y tiene longitud)
+        if (is_string($docente->nombre) && (strpos($docente->nombre, 'ey') === 0 || strlen($docente->nombre) > 50)) {
+            $docente->nombre           = decrypt($docente->nombre);
+            $docente->apellido_paterno = decrypt($docente->apellido_paterno);
+            $docente->apellido_materno = $docente->apellido_materno ? decrypt($docente->apellido_materno) : null;
+            
+            if ($docente->telefono) {
+                $docente->telefono = decrypt($docente->telefono);
             }
-            return $docente;
-        });
+        } else {
+            // Si es un dato plano (Legacy), no llamamos a decrypt() para evitar el crash
+            $docente->nombre = $docente->nombre . ' (Plain)';
+        }
+    } catch (\Throwable $e) {
+        // Capturamos Throwable para evitar la excepción nativa de unserialize() en PHP 8.3
+        $docente->nombre = $docente->nombre . ' (Plain)';
+    }
+
+    return $docente;
+});
 
         return view('cpanel/docentes/indexdocente', ['docentes' => $docentesPaginados]);
     }
@@ -98,4 +109,39 @@ class DocenteController extends Controller
             ->route('docentes.index')
             ->with('success', 'El perfil docente se ha guardado y encriptado en la matriz del SUIE de forma exitosa.');
     }
+
+    public function update(Request $request, $id)
+{
+    $request->validate([
+        'nombre'           => ['required', 'string', 'max:255'],
+        'apellido_paterno' => ['required', 'string', 'max:255'],
+        'apellido_materno' => ['nullable', 'string', 'max:255'],
+        'correo'           => ['nullable', 'email', 'max:255'],
+        'telefono'         => ['nullable', 'string', 'max:20'],
+        'activo'           => ['required', 'boolean'],
+    ]);
+
+    $docente = DB::table('docentes')->where('id', $id)->first();
+
+    if (!$docente) {
+        return redirect()->back()->withErrors(['docente' => 'El docente especificado no existe.']);
+    }
+
+    // Actualización de la información del docente con cifrado
+    DB::table('docentes')->where('id', $id)->update([
+        'nombre'           => encrypt($request->input('nombre')),
+        'apellido_paterno' => encrypt($request->input('apellido_paterno')),
+        'apellido_materno' => $request->filled('apellido_materno') ? encrypt($request->input('apellido_materno')) : null,
+        'correo'           => $request->input('correo'),
+        'telefono'         => $request->filled('telefono') ? encrypt($request->input('telefono')) : null,
+    ]);
+
+    // Actualización del estatus del usuario en la tabla relacionada
+    DB::table('usuarios')->where('id', $docente->usuario_id)->update([
+        'activo'     => $request->input('activo'),
+        'updated_at' => now(),
+    ]);
+
+    return redirect()->route('docentes.index')->with('success', 'Información del docente actualizada correctamente.');
+}
 }

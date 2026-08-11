@@ -52,16 +52,25 @@ class CargaAcademicaController
                                  ->paginate(15);
 
         // Iteramos la colección para descifrar la identidad del docente en tiempo de ejecución
-        $cargasPaginadas->getCollection()->transform(function ($carga) {
-            try {
-                $carga->docente_nombre = decrypt($carga->docente_nombre);
-                $carga->docente_apellido = decrypt($carga->docente_apellido);
-            } catch (DecryptException $e) {
-                // Mitigación de errores: Soporte para registros creados antes del cifrado
-                $carga->docente_nombre = $carga->docente_nombre . ' (Plain)';
-            }
-            return $carga;
-        });
+        // En CargaAcademicaController.php -> index()
+
+$cargasPaginadas->getCollection()->transform(function ($carga) {
+    try {
+        // Validamos si el nombre del docente parece estar encriptado en Base64 (empieza con 'ey' y es largo)
+        if (is_string($carga->docente_nombre) && (strpos($carga->docente_nombre, 'ey') === 0 || strlen($carga->docente_nombre) > 50)) {
+            $carga->docente_nombre   = decrypt($carga->docente_nombre);
+            $carga->docente_apellido = decrypt($carga->docente_apellido);
+        } else {
+            // Si es texto plano (Legacy), evitamos llamar a decrypt()
+            $carga->docente_nombre = $carga->docente_nombre . ' (Plain)';
+        }
+    } catch (\Throwable $e) {
+        // Atrapamos Throwable para evitar el crash de unserialize() en PHP 8.3
+        $carga->docente_nombre = $carga->docente_nombre . ' (Plain)';
+    }
+
+    return $carga;
+});
 
         return view('cpanel/ConEscolar/indexcarga', ['cargas' => $cargasPaginadas]);
     }

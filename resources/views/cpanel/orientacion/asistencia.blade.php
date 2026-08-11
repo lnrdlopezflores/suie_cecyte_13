@@ -54,18 +54,39 @@
                         
                         @forelse($alumnos as $index => $alumno)
                             @php
-                                // Cálculo dinámico en tiempo real del porcentaje para la alerta visual
+                                // Descifrado dinámico y seguro de la identidad del estudiante
+                                $nombre = $alumno->nombre;
+                                $paterno = $alumno->apellido_paterno;
+                                $materno = $alumno->apellido_materno;
+
+                                try {
+                                    if (is_string($nombre) && (str_starts_with($nombre, 'ey') || strlen($nombre) > 50)) {
+                                        $nombre = decrypt($nombre);
+                                    }
+                                    if (is_string($paterno) && (str_starts_with($paterno, 'ey') || strlen($paterno) > 50)) {
+                                        $paterno = decrypt($paterno);
+                                    }
+                                    if (is_string($materno) && (str_starts_with($materno, 'ey') || strlen($materno) > 50)) {
+                                        $materno = decrypt($materno);
+                                    }
+                                } catch (\Throwable $e) {
+                                    // Mantiene los valores de respaldo si el dato está en texto plano
+                                    $nombre = str_replace(' (Plain)', '', $nombre);
+                                    $paterno = str_replace(' (Plain)', '', $paterno);
+                                    $materno = str_replace(' (Plain)', '', $materno);
+                                }
+
+                                // Cálculo dinámico en tiempo real del porcentaje
                                 $porcentaje = $alumno->clases_totales > 0 
                                     ? round((($alumno->clases_totales - $alumno->faltas_acumuladas) / $alumno->clases_totales) * 100, 1) 
                                     : 100;
                             @endphp
                             
                             <tr class="hover:bg-slate-50/50 transition-colors {{ $porcentaje < 80 ? 'bg-red-50/20' : '' }}">
-                                {{-- Línea con el error --}}
-                                    <td class="p-4 font-mono text-slate-400">{{ \Illuminate\Support\Str::padLeft($index + 1, 2, '0') }}</td>
+                                <td class="p-4 font-mono text-slate-400">{{ \Illuminate\Support\Str::padLeft($index + 1, 2, '0') }}</td>
                                 <td class="p-4">
                                     <div class="font-bold text-slate-900">
-                                        {{ $alumno->apellido_paterno }} {{ $alumno->apellido_materno }} {{ $alumno->nombre }}
+                                        {{ $paterno }} {{ $materno }} {{ $nombre }}
                                     </div>
                                     <div class="text-[10px] text-slate-400 font-mono mt-0.5">{{ $alumno->username }}</div>
                                 </td>

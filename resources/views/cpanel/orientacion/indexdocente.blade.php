@@ -1,15 +1,36 @@
 @extends('cpanel/plantilladocente')
 @section('title', 'dashboard')
 @section('content')
-        <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
-    
+<main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+    {{-- Lógica de Descifrado Seguro para el Nombre del Docente --}}
+    @php
+        $nombreDocente = 'Profesor';
+        $docente = auth()->user()->docente;
+
+        if ($docente && !empty($docente->nombre)) {
+            $rawNombre = str_replace(' (Plain)', '', $docente->nombre);
+            
+            // Si el nombre tiene formato de cadena cifrada en Base64 (empieza con 'ey' y es largo)
+            if (is_string($rawNombre) && (str_starts_with($rawNombre, 'ey') || strlen($rawNombre) > 50)) {
+                try {
+                    $nombreDocente = decrypt($rawNombre);
+                } catch (\Throwable $e) {
+                    $nombreDocente = $rawNombre;
+                }
+            } else {
+                $nombreDocente = $rawNombre;
+            }
+        }
+    @endphp
+
     <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div class="space-y-1">
             <h2 class="text-xl font-bold text-slate-900">
-                ¡Bienvenido de vuelta, {{ auth()->user()->docente?->nombre ?? 'Profesor' }}!
+                ¡Bienvenido de vuelta, {{ $nombreDocente }}!
             </h2>
             <p class="text-xs text-slate-500">
-                Ciclo Escolar Activo: <span class="font-semibold text-indigo-700">2026-A (Febrero - Julio)</span> • Revisa tus asignaturas y grupos cargados.
+                Ciclo Escolar Activo: <span class="font-semibold text-indigo-700">2026 - 2027</span> • Revisa tus asignaturas y grupos cargados.
             </p>
         </div>
         <div class="bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl text-center shrink-0">

@@ -26,7 +26,7 @@ class AsistenciaController extends Controller
             return redirect()->route('docente.dashboard')->with('error', 'Carga académica no válida.');
         }
 
-        // 2. Extraer alumnos asignados al grupo calculando faltas históricas y asistencias totales en este módulo
+        // 2. Extraer alumnos asignados al grupo calculando faltas históricas y asistencias totales
         $alumnos = DB::table('alumnos')
             ->join('usuarios', 'alumnos.usuario_id', '=', 'usuarios.id')
             ->select(
@@ -35,14 +35,26 @@ class AsistenciaController extends Controller
                 'alumnos.apellido_paterno',
                 'alumnos.apellido_materno',
                 'usuarios.username', // Matrícula
-                // Subconsulta para totalizar clases en esta carga académica
                 DB::raw("(SELECT COUNT(*) FROM asistencias WHERE asistencias.alumno_id = alumnos.id AND asistencias.carga_academica_id = $cargaId) as clases_totales"),
-                // Subconsulta para obtener las faltas acumuladas en esta materia
                 DB::raw("(SELECT COUNT(*) FROM asistencias WHERE asistencias.alumno_id = alumnos.id AND asistencias.carga_academica_id = $cargaId AND asistencias.estatus = 'Falta') as faltas_acumuladas")
             )
             ->where('alumnos.grupo_id', $carga->grupo_id)
             ->orderBy('alumnos.apellido_paterno', 'asc')
             ->get();
+
+        // 3. Descifrado dinámico de la lista de alumnos
+        $alumnos->transform(function ($alumno) {
+            try {
+                if (is_string($alumno->nombre) && (strpos($alumno->nombre, 'ey') === 0 || strlen($alumno->nombre) > 50)) {
+                    $alumno->nombre           = decrypt($alumno->nombre);
+                    $alumno->apellido_paterno = decrypt($alumno->apellido_paterno);
+                    $alumno->apellido_materno = $alumno->apellido_materno ? decrypt($alumno->apellido_materno) : null;
+                }
+            } catch (\Throwable $e) {
+                // Se preserva el valor original en texto plano
+            }
+            return $alumno;
+        });
 
         return view('cpanel/orientacion/asistencia', compact('carga', 'alumnos'));
     }
@@ -58,20 +70,15 @@ class AsistenciaController extends Controller
         ]);
 
         $fecha = $request->input('fecha');
-        // Obtener la matriz mapeada del array que viene desde los checkbox de la vista
         $asistenciasEnviadas = $request->input('asistencias', []);
 
-        // Obtener la lista total de alumnos de este grupo para procesar las ausencias (checkboxes desmarcados)
         $carga = DB::table('carga_academica')->where('id', $cargaId)->first();
         $alumnoIds = DB::table('alumnos')->where('grupo_id', $carga->grupo_id)->pluck('id');
 
-        // Transacción de base de datos para garantizar consistencia atómica masiva
         DB::transaction(function () use ($alumnoIds, $asistenciasEnviadas, $cargaId, $fecha) {
             foreach ($alumnoIds as $id) {
-                // Si el ID del alumno existe en el request, se marca como Asistencia, de lo contrario es Falta
                 $estatus = array_key_exists($id, $asistenciasEnviadas) ? 'Asistencia' : 'Falta';
 
-                // updateOrInsert evita registros duplicados si el docente guarda dos veces el mismo día
                 DB::table('asistencias')->updateOrInsert(
                     [
                         'carga_academica_id' => $cargaId,
@@ -86,9 +93,12 @@ class AsistenciaController extends Controller
             }
         });
 
-       return redirect()->route('dashboardDocente.index')->with('success', 'El registro de asistencias se ha guardado exitosamente.');
+        return redirect()->route('dashboardDocente.index')->with('success', 'El registro de asistencias se ha guardado exitosamente.');
     }
 
+    /**
+     * Genera el reporte de alumnos en condición crítica de inasistencias (<80%).
+     */
     public function reporteCritico(Request $request)
     {
         $grupoId = $request->input('grupo_id');
@@ -127,21 +137,36 @@ class AsistenciaController extends Controller
             $query->where('grupos.id', $grupoId);
         }
 
-        // 3. Procesar filtros matemáticos sobre la colección
+        // 3. Procesar descifrado y filtros matemáticos sobre la colección
         $alumnosCollection = $query->get()->map(function($alumno) {
+            // Descifrado dinámico de la identidad del alumno y su tutor
+            try {
+                if (is_string($alumno->nombre) && (strpos($alumno->nombre, 'ey') === 0 || strlen($alumno->nombre) > 50)) {
+                    $alumno->nombre           = decrypt($alumno->nombre);
+                    $alumno->apellido_paterno = decrypt($alumno->apellido_paterno);
+                    $alumno->apellido_materno = $alumno->apellido_materno ? decrypt($alumno->apellido_materno) : null;
+                    $alumno->nombre_tutor     = decrypt($alumno->nombre_tutor);
+                    $alumno->telefono_tutor   = decrypt($alumno->telefono_tutor);
+                }
+            } catch (\Throwable $e) {
+                // Conservar en texto plano si no se encuentra cifrado
+            }
+
+            // Cálculo del porcentaje de asistencia
             if ($alumno->total_clases > 0) {
                 $asistencias = $alumno->total_clases - $alumno->total_faltas;
                 $alumno->porcentaje_asistencia = ($asistencias / $alumno->total_clases) * 100;
             } else {
                 $alumno->porcentaje_asistencia = 100.0;
             }
+
             return $alumno;
         })->filter(function($alumno) {
-            // Filtrar alumnos con menos del 80% (o el umbral crítico deseado)
+            // Filtrar únicamente alumnos en condición crítica (< 80%)
             return $alumno->porcentaje_asistencia < 80.0;
         })->sortBy('porcentaje_asistencia');
 
-        // 4. MOTOR DE PAGINACIÓN MANUAL PARA LA COLECCIÓN SUIE
+        // 4. Paginación manual de la colección
         $perPage = 15;
         $currentPage = Paginator::resolveCurrentPage() ?: 1;
         $currentItems = $alumnosCollection->slice(($currentPage - 1) * $perPage, $perPage)->values();
@@ -157,6 +182,9 @@ class AsistenciaController extends Controller
         return view('cpanel/orientacion/alertaInasistencia', compact('alumnos', 'gruposActivos'));
     }
 
+    /**
+     * Construye y redirige la notificación vía WhatsApp para el tutor legal del estudiante.
+     */
     public function enviarAlertaTutor(Request $request)
     {
         $request->validate([
@@ -164,7 +192,7 @@ class AsistenciaController extends Controller
             'carga_id'  => ['required', 'integer', 'exists:carga_academica,id'],
         ]);
 
-        // 1. Extraer la bitácora e información específica del estudiante y su tutor
+        // 1. Extraer la información del estudiante y su tutor
         $datos = DB::table('alumnos')
             ->join('usuarios', 'alumnos.usuario_id', '=', 'usuarios.id')
             ->join('grupos', 'alumnos.grupo_id', '=', 'grupos.id')
@@ -185,7 +213,19 @@ class AsistenciaController extends Controller
             return redirect()->back()->withErrors(['error' => 'No se encontraron datos consistentes para la alerta.']);
         }
 
-        // 2. Calcular el porcentaje real para el mensaje informativo
+        // 2. Descifrar información sensible antes de construir el mensaje
+        try {
+            if (is_string($datos->nombre) && (strpos($datos->nombre, 'ey') === 0 || strlen($datos->nombre) > 50)) {
+                $datos->nombre           = decrypt($datos->nombre);
+                $datos->apellido_paterno = decrypt($datos->apellido_paterno);
+                $datos->nombre_tutor     = decrypt($datos->nombre_tutor);
+                $datos->telefono_tutor   = decrypt($datos->telefono_tutor);
+            }
+        } catch (\Throwable $e) {
+            // Mantiene el valor en texto plano
+        }
+
+        // 3. Calcular el porcentaje real de asistencias
         if ($datos->total_clases > 0) {
             $asistenciasEfectivas = $datos->total_clases - $datos->total_faltas;
             $porcentaje = round(($asistenciasEfectivas / $datos->total_clases) * 100, 1);
@@ -193,23 +233,20 @@ class AsistenciaController extends Controller
             $porcentaje = 100.0;
         }
 
-        // 3. Sanitizar el teléfono del tutor (eliminar guiones, espacios y asegurar código de país si falta)
+        // 4. Limpiar el teléfono para la API de WhatsApp
         $telefonoLimpio = preg_replace('/[^0-9]/', '', $datos->telefono_tutor);
         if (strlen($telefonoLimpio) == 10) {
-            $telefonoLimpio = '52' . $telefonoLimpio; // Prefijo internacional de México por defecto
+            $telefonoLimpio = '52' . $telefonoLimpio; // Prefijo de México
         }
 
-        // 4. Redactar el texto institucional formalizado para el SUIE
+        // 5. Construcción del texto institucional
         $mensaje = "Estimado(a) {$datos->nombre_tutor},\n\n";
-        $mensaje .= "Le informamos desde la Oficina de Orientación Educativa del plantel que el alumno(a) {$datos->apellido_paterno} {$datos->nombre}* (Matrícula: {$datos->username}), inscrito en el {$datos->semestre}° \"{$datos->grupo}\", registra actualmente un porcentaje crítico de asistencia del {$porcentaje}% en la asignatura de {$datos->materia_nombre} debido a {$datos->total_faltas} faltas acumuladas.\n\n";
+        $mensaje .= "Le informamos desde la Oficina de Orientación Educativa del plantel que el alumno(a) *{$datos->nombre} {$datos->apellido_paterno}* (Matrícula: {$datos->username}), inscrito en el {$datos->semestre}° \"{$datos->grupo}\", registra actualmente un porcentaje crítico de asistencia del *{$porcentaje}%* en la asignatura de *{$datos->materia_nombre}* debido a {$datos->total_faltas} faltas acumuladas.\n\n";
         $mensaje .= "Le recordamos que el mínimo reglamentario para conservar el derecho a evaluación ordinaria es del *80%*. Solicitamos su valioso apoyo para conversar con su tutorado. Saludos cordiales.";
 
-        // 5. Construir la URL universal de WhatsApp API
+        // 6. Redirección a WhatsApp API
         $urlWhatsApp = "https://wa.me/{$telefonoLimpio}?text=" . urlencode($mensaje);
 
-        // 6. Redirección inmediata al hilo de chat de WhatsApp
         return redirect()->away($urlWhatsApp);
     }
 }
-
-

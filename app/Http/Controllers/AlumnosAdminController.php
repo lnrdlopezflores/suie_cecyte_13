@@ -49,19 +49,28 @@ class AlumnosAdminController extends Controller
         $alumnosPaginados = $query->orderBy('alumnos.id', 'desc')->paginate(15);
 
         // Transformamos los resultados del paginador para descifrar los strings
-        $alumnosPaginados->getCollection()->transform(function ($alumno) {
-            try {
-                $alumno->nombre = decrypt($alumno->nombre);
-                $alumno->apellido_paterno = decrypt($alumno->apellido_paterno);
-                $alumno->apellido_materno = $alumno->apellido_materno ? decrypt($alumno->apellido_materno) : null;
-                $alumno->nombre_tutor = decrypt($alumno->nombre_tutor);
-                $alumno->telefono_tutor = decrypt($alumno->telefono_tutor);
-            } catch (DecryptException $e) {
-                // Si hay datos viejos en la BD sin cifrar, los muestra tal cual para evitar romper la vista
-                $alumno->nombre = $alumno->nombre . ' (Sin Cifrar)';
-            }
-            return $alumno;
-        });
+        // En AlumnosAdminController.php -> index()
+
+$alumnosPaginados->getCollection()->transform(function ($alumno) {
+    try {
+        // Validamos si el string tiene formato Base64 encriptado de Laravel (empieza con 'ey')
+        if (is_string($alumno->nombre) && (strpos($alumno->nombre, 'ey') === 0 || strlen($alumno->nombre) > 50)) {
+            $alumno->nombre           = decrypt($alumno->nombre);
+            $alumno->apellido_paterno = decrypt($alumno->apellido_paterno);
+            $alumno->apellido_materno = $alumno->apellido_materno ? decrypt($alumno->apellido_materno) : null;
+            $alumno->nombre_tutor     = decrypt($alumno->nombre_tutor);
+            $alumno->telefono_tutor   = decrypt($alumno->telefono_tutor);
+        } else {
+            // Si es texto plano (Legacy), mantenemos el valor sin forzar el decrypt()
+            $alumno->nombre = $alumno->nombre . ' (Plain)';
+        }
+    } catch (\Throwable $e) {
+        // Atrapa Throwable para evitar el crash de unserialize() en PHP 8.3
+        $alumno->nombre = $alumno->nombre . ' (Plain)';
+    }
+
+    return $alumno;
+});
 
         return view('cpanel/Alumnos/indexalumnos', ['alumnos' => $alumnosPaginados]);
     }

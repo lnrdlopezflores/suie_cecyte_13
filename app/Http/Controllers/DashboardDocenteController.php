@@ -11,11 +11,17 @@ class DashboardDocenteController extends Controller
     public function index()
     {
   // 1. Obtener el ID del docente vinculado al usuario logueado
-        $docenteId = auth()->user()->docente?->id;
+        $user = Auth::user();
 
-        if (!$docenteId) {
-            return redirect()->to('/')->with('error', 'Usuario no identificado como docente.');
+    if ($user->docente) {
+        try {
+            if (is_string($user->docente->nombre) && (strpos($user->docente->nombre, 'ey') === 0 || strlen($user->docente->nombre) > 50)) {
+                $user->docente->nombre = decrypt($user->docente->nombre);
+            }
+        } catch (\Throwable $e) {
+            // Se mantiene el valor en texto plano si falla el decrypt
         }
+    }
 
         // 2. CORRECCIÓN DE LA CONSULTA: Traer la carga académica con sus relaciones unidas
         // Corrección de la consulta en DashboardDocenteController.php (Línea 34)
@@ -31,7 +37,7 @@ class DashboardDocenteController extends Controller
                 'carga_academica.horario',
                 'carga_academica.aula'
             )
-            ->where('carga_academica.docente_id', $docenteId)
+            ->where('carga_academica.docente_id', $user->docente->id) // Filtramos por el docente logueado
             ->get();
 
         // 3. Simulación o cálculo de variables adicionales (opcional por ahora)

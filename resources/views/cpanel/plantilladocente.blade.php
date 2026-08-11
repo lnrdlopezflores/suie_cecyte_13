@@ -30,16 +30,51 @@
                         </div>
                     @endif
 
+                    @php
+                        // Lógica de Descifrado Dinámico para la Identidad del Docente
+                        $docenteNombre = '';
+                        $docenteApellido = '';
+                        $inicialesAvatar = '';
+
+                        if (auth()->user()->docente) {
+                            $rawNombre = str_replace(' (Plain)', '', auth()->user()->docente->nombre ?? '');
+                            $rawApellido = str_replace(' (Plain)', '', auth()->user()->docente->apellido_paterno ?? '');
+
+                            // Descifrado seguro del Nombre
+                            try {
+                                if (is_string($rawNombre) && (str_starts_with($rawNombre, 'ey') || strlen($rawNombre) > 50)) {
+                                    $docenteNombre = decrypt($rawNombre);
+                                } else {
+                                    $docenteNombre = $rawNombre;
+                                }
+                            } catch (\Throwable $e) {
+                                $docenteNombre = $rawNombre;
+                            }
+
+                            // Descifrado seguro del Apellido Paterno
+                            try {
+                                if (is_string($rawApellido) && (str_starts_with($rawApellido, 'ey') || strlen($rawApellido) > 50)) {
+                                    $docenteApellido = decrypt($rawApellido);
+                                } else {
+                                    $docenteApellido = $rawApellido;
+                                }
+                            } catch (\Throwable $e) {
+                                $docenteApellido = $rawApellido;
+                            }
+
+                            // Cálculo seguro de iniciales para el avatar
+                            $iniN = !empty($docenteNombre) ? mb_substr($docenteNombre, 0, 1) : 'P';
+                            $iniA = !empty($docenteApellido) ? mb_substr($docenteApellido, 0, 1) : 'R';
+                            $inicialesAvatar = strtoupper($iniN . $iniA);
+                        } else {
+                            $inicialesAvatar = strtoupper(mb_substr(auth()->user()->username ?? 'US', 0, 2));
+                        }
+                    @endphp
+
                     <div class="text-right hidden md:block">
                         @if(auth()->user()->docente)
-                            {{-- Saneamiento preventivo por si el controlador envía el string plano o corrupto --}}
-                            @php
-                                $nombreDocente = str_replace(' (Plain)', '', auth()->user()->docente->nombre);
-                                $apellidoDocente = auth()->user()->docente->apellido_paterno;
-                                $esCifrado = (strlen($nombreDocente) > 40 || strpos($nombreDocente, 'eyJ') === 0);
-                            @endphp
                             <p class="text-xs font-bold text-slate-900 truncate max-w-[200px]">
-                                Prof. {{ $esCifrado ? 'Académico SUIE' : $nombreDocente . ' ' . $apellidoDocente }}
+                                Prof. {{ $docenteNombre }} {{ $docenteApellido }}
                             </p>
                         @else
                             <p class="text-xs font-bold text-slate-900 uppercase">
@@ -51,19 +86,10 @@
                         </p>
                     </div>
 
-                    <!-- DROPDOWN DE PERFIL CON CONTROL ANTICORRUPCIÓN -->
+                    <!-- DROPDOWN DE PERFIL -->
                     <div class="relative">
                         <button id="profileDropdownBtn" class="w-9 h-9 bg-rose-50 hover:bg-rose-100 text-[#841B44] rounded-xl flex items-center justify-center font-black border border-rose-200/60 text-xs uppercase cursor-pointer focus:outline-hidden transition-colors select-none">
-                            @if(auth()->user()->docente)
-                                @php
-                                    $iniNombre = mb_substr(str_replace(' (Plain)', '', auth()->user()->docente->nombre), 0, 1);
-                                    $iniApellido = mb_substr(auth()->user()->docente->apellido_paterno, 0, 1);
-                                    $avatarInvalido = (strlen(auth()->user()->docente->nombre) > 40);
-                                @endphp
-                                {{ $avatarInvalido ? 'PR' : $iniNombre . $iniApellido }}
-                            @else
-                                {{ mb_substr(auth()->user()->username, 0, 2) }}
-                            @endif
+                            {{ $inicialesAvatar }}
                         </button>
 
                         <!-- MENÚ DESPLEGABLE -->
@@ -73,7 +99,7 @@
                             <div class="px-4 py-2.5 border-b border-slate-100 md:hidden bg-slate-50/50 rounded-t-xl">
                                 <p class="text-xs font-black text-slate-900 truncate">
                                     @if(auth()->user()->docente)
-                                        Prof. {{ (strlen(auth()->user()->docente->nombre) > 40) ? 'Docente Autorizado' : str_replace(' (Plain)', '', auth()->user()->docente->nombre) }}
+                                        Prof. {{ $docenteNombre }} {{ $docenteApellido }}
                                     @else
                                         {{ auth()->user()->rol ?? 'Estudiante' }}
                                     @endif

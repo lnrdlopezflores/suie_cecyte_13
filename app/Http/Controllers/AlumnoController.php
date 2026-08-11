@@ -43,19 +43,28 @@ class AlumnoController extends Controller
         $alumnosPaginados = $query->orderBy('alumnos.id', 'desc')->paginate(15);
 
         // Desciframos dinámicamente la colección de la tabla principal antes de ir al Blade
-        $alumnosPaginados->getCollection()->transform(function ($alumno) {
-            try {
-                $alumno->nombre = decrypt($alumno->nombre);
-                $alumno->apellido_paterno = decrypt($alumno->apellido_paterno);
-                $alumno->apellido_materno = $alumno->apellido_materno ? decrypt($alumno->apellido_materno) : null;
-                $alumno->nombre_tutor = decrypt($alumno->nombre_tutor);
-                $alumno->telefono_tutor = decrypt($alumno->telefono_tutor);
-            } catch (DecryptException $e) {
-                // Compatibilidad con registros legacy en texto plano
-                $alumno->nombre = $alumno->nombre . ' (Plain)';
-            }
-            return $alumno;
-        });
+// En AlumnosAdminController.php -> index()
+
+$alumnosPaginados->getCollection()->transform(function ($alumno) {
+    try {
+        // Validamos si el string tiene formato Base64 encriptado de Laravel (empieza con 'ey')
+        if (is_string($alumno->nombre) && (strpos($alumno->nombre, 'ey') === 0 || strlen($alumno->nombre) > 50)) {
+            $alumno->nombre           = decrypt($alumno->nombre);
+            $alumno->apellido_paterno = decrypt($alumno->apellido_paterno);
+            $alumno->apellido_materno = $alumno->apellido_materno ? decrypt($alumno->apellido_materno) : null;
+            $alumno->nombre_tutor     = decrypt($alumno->nombre_tutor);
+            $alumno->telefono_tutor   = decrypt($alumno->telefono_tutor);
+        } else {
+            // Si es texto plano (Legacy), mantenemos el valor sin forzar el decrypt()
+            $alumno->nombre = $alumno->nombre . ' (Plain)';
+        }
+    } catch (\Throwable $e) {
+        // Atrapa Throwable para evitar el crash de unserialize() en PHP 8.3
+        $alumno->nombre = $alumno->nombre . ' (Plain)';
+    }
+
+    return $alumno;
+});
 
         // 3. Colecciones para el Modal
         $gruposActivos = DB::table('grupos')->orderBy('semestre', 'asc')->get();
