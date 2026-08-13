@@ -14,57 +14,51 @@ class DocenteController extends Controller
      * Muestra el catálogo completo de personal docente con filtros (Descifrado dinámico).
      */
     public function index(Request $request)
-    {
-        $buscar = $request->input('buscar');
+{
+    $query = DB::table('docentes')
+        ->join('usuarios', 'docentes.usuario_id', '=', 'usuarios.id')
+        ->select(
+            'docentes.id as docente_id',
+            'docentes.nombre',
+            'docentes.apellido_paterno',
+            'docentes.apellido_materno',
+            'docentes.correo',
+            'docentes.telefono',
+            'usuarios.username',
+            'usuarios.activo'
+        );
 
-        $query = DB::table('docentes')
-            ->join('usuarios', 'docentes.usuario_id', '=', 'usuarios.id')
-            ->select(
-                'docentes.id as docente_id',
-                'docentes.nombre',
-                'docentes.apellido_paterno',
-                'docentes.apellido_materno',
-                'docentes.correo',
-                'docentes.telefono',
-                'usuarios.username',  // Clave de empleado (No se cifra para permitir búsquedas directas)
-                'usuarios.activo'     
-            );
-        // Filtramos de forma exacta y ultra rápida usando el username/clave de nómina.
-        if (!empty($buscar)) {
-            $query->where('usuarios.username', 'LIKE', '%' . $buscar . '%');
-        }
+    // Búsqueda opcional por parámetro
+    if ($request->filled('buscar')) {
+        $term = $request->input('buscar');
+        $query->where('usuarios.username', 'like', "%{$term}%");
+    }
 
-        // Ordenamos por ID de forma descendente o por el username
-        $docentesPaginados = $query->orderBy('usuarios.username', 'asc')->paginate(15);
+    $docentesPaginados = $query->orderBy('usuarios.username', 'asc')->paginate(15);
 
-        // Iteramos sobre la colección del paginador para descifrar en tiempo de ejecución
-        // En DocenteController.php -> index()
-
-$docentesPaginados->getCollection()->transform(function ($docente) {
-    try {
-        // Verificamos si el string tiene la estructura de un JSON cifrado de Laravel (empieza con 'ey' y tiene longitud)
-        if (is_string($docente->nombre) && (strpos($docente->nombre, 'ey') === 0 || strlen($docente->nombre) > 50)) {
-            $docente->nombre           = decrypt($docente->nombre);
-            $docente->apellido_paterno = decrypt($docente->apellido_paterno);
-            $docente->apellido_materno = $docente->apellido_materno ? decrypt($docente->apellido_materno) : null;
-            
-            if ($docente->telefono) {
+    // Transformación defensiva con descifrado
+    $docentesPaginados->getCollection()->transform(function ($docente) {
+        try {
+            if (is_string($docente->nombre) && (strpos($docente->nombre, 'ey') === 0 || strlen($docente->nombre) > 50)) {
+                $docente->nombre           = decrypt($docente->nombre);
+                $docente->apellido_paterno = decrypt($docente->apellido_paterno);
+                $docente->apellido_materno = $docente->apellido_materno ? decrypt($docente->apellido_materno) : null;
+            }
+            if (is_string($docente->correo) && (strpos($docente->correo, 'ey') === 0 || strlen($docente->correo) > 50)) {
+                $docente->correo = decrypt($docente->correo);
+            }
+            if (is_string($docente->telefono) && (strpos($docente->telefono, 'ey') === 0 || strlen($docente->telefono) > 50)) {
                 $docente->telefono = decrypt($docente->telefono);
             }
-        } else {
-            // Si es un dato plano (Legacy), no llamamos a decrypt() para evitar el crash
-            $docente->nombre = $docente->nombre . ' (Plain)';
+        } catch (\Throwable $e) {
+            // Se conserva en texto plano si falla OpenSSL
         }
-    } catch (\Throwable $e) {
-        // Capturamos Throwable para evitar la excepción nativa de unserialize() en PHP 8.3
-        $docente->nombre = $docente->nombre . ' (Plain)';
-    }
 
-    return $docente;
-});
+        return $docente;
+    });
 
-        return view('cpanel/docentes/indexdocente', ['docentes' => $docentesPaginados]);
-    }
+    return view('cpanel/docentes/indexdocente', ['docentes' => $docentesPaginados]);
+}
 
     public function create()
     {
@@ -127,16 +121,16 @@ $docentesPaginados->getCollection()->transform(function ($docente) {
         return redirect()->back()->withErrors(['docente' => 'El docente especificado no existe.']);
     }
 
-    // Actualización de la información del docente con cifrado
+    // Cifrado de datos sensibles (nombre, apellidos, teléfono Y CORREO)
     DB::table('docentes')->where('id', $id)->update([
         'nombre'           => encrypt($request->input('nombre')),
         'apellido_paterno' => encrypt($request->input('apellido_paterno')),
         'apellido_materno' => $request->filled('apellido_materno') ? encrypt($request->input('apellido_materno')) : null,
-        'correo'           => $request->input('correo'),
+        'correo'           => $request->filled('correo') ? encrypt($request->input('correo')) : null,
         'telefono'         => $request->filled('telefono') ? encrypt($request->input('telefono')) : null,
     ]);
 
-    // Actualización del estatus del usuario en la tabla relacionada
+    // Actualización del estado del usuario en la tabla relacionada
     DB::table('usuarios')->where('id', $docente->usuario_id)->update([
         'activo'     => $request->input('activo'),
         'updated_at' => now(),

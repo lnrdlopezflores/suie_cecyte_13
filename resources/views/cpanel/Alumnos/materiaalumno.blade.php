@@ -1,7 +1,5 @@
 @extends('cpanel/plantillaestudiante')
-
 @section('title', 'Mis Materias')
-
 @section('grupo_badge')
     @if(isset($grupoInfo))
         {{ $grupoInfo->semestre }}° Semestre — Grupo "{{ $grupoInfo->grupo }}"
@@ -33,6 +31,27 @@
     <!-- TARJETAS/CONTENEDORES DE MATERIAS -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         @forelse($materias as $materia)
+            @php
+                // Descifrado dinámico y seguro de la identidad del docente
+                $docenteNombre = $materia->docente_nombre ?? '';
+                $docenteApellido = $materia->docente_apellido ?? '';
+
+                try {
+                    // Si el nombre viene encriptado en Base64
+                    if (is_string($docenteNombre) && (str_starts_with($docenteNombre, 'ey') || strlen($docenteNombre) > 50)) {
+                        $docenteNombre = decrypt($docenteNombre);
+                    }
+                    // Si el apellido viene encriptado en Base64
+                    if (is_string($docenteApellido) && (str_starts_with($docenteApellido, 'ey') || strlen($docenteApellido) > 50)) {
+                        $docenteApellido = decrypt($docenteApellido);
+                    }
+                } catch (\Throwable $e) {
+                    // Sanitización en caso de texto plano previamente formateado
+                    $docenteNombre = str_replace(' (Plain)', '', $docenteNombre);
+                    $docenteApellido = str_replace(' (Plain)', '', $docenteApellido);
+                }
+            @endphp
+
             <div class="bg-white rounded-2xl border border-slate-200 shadow-3xs p-5 flex flex-col justify-between space-y-4 hover:border-slate-300 transition-all">
                 
                 <!-- Identificación de la Asignatura -->
@@ -46,7 +65,7 @@
                         </h3>
                         <p class="text-slate-500 font-medium text-[11px] flex items-center gap-1 pt-0.5">
                             <span class="material-icons-round text-sm text-slate-400">person</span>
-                            Prof. {{ $materia->docente_apellido }} {{ $materia->docente_nombre }}
+                            Prof. {{ $docenteApellido }} {{ $docenteNombre }}
                         </p>
                     </div>
                     
@@ -76,7 +95,7 @@
                     </div>
                 </div>
 
-                <!-- Barra de Seguimiento de Asistencias (Métricas reales en base a tus tablas) -->
+                <!-- Barra de Seguimiento de Asistencias -->
                 <div class="pt-1 space-y-1.5">
                     <div class="flex justify-between items-center text-[10px] font-bold">
                         <span class="text-slate-400 uppercase tracking-wider">Rendimiento de Asistencias</span>

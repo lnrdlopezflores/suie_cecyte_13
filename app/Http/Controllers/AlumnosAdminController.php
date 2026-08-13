@@ -119,4 +119,25 @@ $alumnosPaginados->getCollection()->transform(function ($alumno) {
             ->route('AdAlumnos.index')
             ->with('success', 'El expediente del alumno ha sido guardado y cifrado de manera correcta.');
     }
+
+    public function update(Request $request, $id)
+{
+    $request->validate([
+        'nombre'           => ['required', 'string', 'max:255'],
+        'apellido_paterno' => ['required', 'string', 'max:255'],
+        'apellido_materno' => ['nullable', 'string', 'max:255'],
+        'nombre_tutor'     => ['required', 'string', 'max:255'],
+        'telefono_tutor'   => ['required', 'string', 'max:20'],
+    ]);
+
+    DB::table('alumnos')->where('id', $id)->update([
+        'nombre'           => encrypt($request->input('nombre')),
+        'apellido_paterno' => encrypt($request->input('apellido_paterno')),
+        'apellido_materno' => $request->filled('apellido_materno') ? encrypt($request->input('apellido_materno')) : null,
+        'nombre_tutor'     => encrypt($request->input('nombre_tutor')),
+        'telefono_tutor'   => encrypt($request->input('telefono_tutor')),
+    ]);
+
+    return redirect()->route('AdAlumnos.index')->with('success', 'Información del alumno actualizada de forma segura.');
+}
 }

@@ -107,4 +107,28 @@ class UsuarioController extends Controller
             ->route('usuarios.create')
             ->with('success', 'El usuario "' . $request->input('username') . '" ha sido incorporado al sistema de forma exitosa.');
     }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'rol'      => ['required', 'string', 'in:Estudiante,Docente,Orientador,Control Escolar,coordinador,administrador'],
+            'activo'   => ['required', 'boolean'],
+            'password' => ['nullable', 'string', 'min:6'],
+        ]);
+
+        $dataUpdate = [
+            'rol'        => $request->input('rol'),
+            'activo'     => $request->input('activo'),
+            'updated_at' => now(),
+        ];
+
+        // Solo se reencripta la contraseña si el usuario escribió una nueva
+        if ($request->filled('password')) {
+            $dataUpdate['password'] = bcrypt($request->input('password'));
+        }
+
+        DB::table('usuarios')->where('id', $id)->update($dataUpdate);
+
+        return redirect()->route('usuarios.index')->with('success', 'Cuenta de usuario modificada correctamente.');
+    }
 }

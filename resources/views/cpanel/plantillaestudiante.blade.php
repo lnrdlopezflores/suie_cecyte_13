@@ -64,6 +64,10 @@
                         <a href="{{ route('alumnoPagos.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors {{ request()->routeIs('alumnoPagos.index') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 hover:text-slate-200' }}">
                             <span class="material-icons-round text-sm">payments</span> Control de Pagos
                         </a>
+                        <!-- MÓDULO DE TITULACIÓN AÑADIDO -->
+                        <a href="{{ route('titulacion.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors {{ request()->routeIs('titulacion.*') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 hover:text-slate-200' }}">
+                            <span class="material-icons-round text-sm">history_edu</span> Proyectos de Titulación
+                        </a>
                     </nav>
                 </div>
             </div>

@@ -70,12 +70,47 @@
                 </thead>
                 <tbody class="divide-y divide-slate-200 text-xs">
                     @forelse($docentes as $docente)
+                        @php
+                            // Descifrado preventivo defensivo para los campos sensibles
+                            $nombre = $docente->nombre;
+                            $paterno = $docente->apellido_paterno;
+                            $materno = $docente->apellido_materno;
+                            $correo = $docente->correo;
+                            $telefono = $docente->telefono;
+
+                            try {
+                                if (is_string($nombre) && (str_starts_with($nombre, 'ey') || strlen($nombre) > 50)) {
+                                    $nombre = decrypt($nombre);
+                                }
+                                if (is_string($paterno) && (str_starts_with($paterno, 'ey') || strlen($paterno) > 50)) {
+                                    $paterno = decrypt($paterno);
+                                }
+                                if (is_string($materno) && (str_starts_with($materno, 'ey') || strlen($materno) > 50)) {
+                                    $materno = decrypt($materno);
+                                }
+                                // Descifrado dinámico del Correo
+                                if (is_string($correo) && (str_starts_with($correo, 'ey') || strlen($correo) > 50)) {
+                                    $correo = decrypt($correo);
+                                }
+                                if (is_string($telefono) && (str_starts_with($telefono, 'ey') || strlen($telefono) > 50)) {
+                                    $telefono = decrypt($telefono);
+                                }
+                            } catch (\Throwable $e) {
+                                // Limpieza si contenía la etiqueta previa de fallback
+                                $nombre = str_replace(' (Plain)', '', $nombre);
+                                $paterno = str_replace(' (Plain)', '', $paterno);
+                                $materno = str_replace(' (Plain)', '', $materno);
+                                $correo = str_replace(' (Plain)', '', $correo);
+                                $telefono = str_replace(' (Plain)', '', $telefono);
+                            }
+                        @endphp
+
                         <tr class="hover:bg-slate-50/40 transition-colors {{ !$docente->activo ? 'bg-slate-50/50 opacity-70' : '' }}">
                             <td class="p-4 text-center font-mono text-slate-500 font-bold">#{{ $docente->docente_id }}</td>
                             
                             <td class="p-4">
                                 <div class="font-bold text-slate-900">
-                                    {{ $docente->apellido_paterno }} {{ $docente->apellido_materno }} {{ $docente->nombre }}
+                                    {{ $paterno }} {{ $materno }} {{ $nombre }}
                                 </div>
                             </td>
                             
@@ -84,19 +119,19 @@
                             </td>
                             
                             <td class="p-4 space-y-0.5">
-                                @if($docente->correo)
+                                @if($correo)
                                     <div class="flex items-center text-slate-600 gap-1">
                                         <span class="material-icons-round text-slate-400 text-xs">mail</span>
-                                        {{ $docente->correo }}
+                                        {{ $correo }}
                                     </div>
                                 @endif
-                                @if($docente->telefono)
+                                @if($telefono)
                                     <div class="flex items-center text-slate-500 gap-1 text-[11px]">
                                         <span class="material-icons-round text-slate-400 text-xs">phone</span>
-                                        {{ $docente->telefono }}
+                                        {{ $telefono }}
                                     </div>
                                 @endif
-                                @if(!$docente->correo && !$docente->telefono)
+                                @if(!$correo && !$telefono)
                                     <span class="text-slate-400 italic">Sin datos de contacto</span>
                                 @endif
                             </td>
@@ -116,7 +151,7 @@
                             <td class="p-4 text-center">
                                 <div class="flex items-center justify-center gap-1">
                                     <!-- Botón Editar Docente -->
-                                    <button onclick="abrirModalEdicion('{{ $docente->docente_id }}', '{{ str_replace(' (Plain)', '', $docente->nombre) }}', '{{ $docente->apellido_paterno }}', '{{ $docente->apellido_materno }}', '{{ $docente->correo }}', '{{ $docente->telefono }}', '{{ $docente->activo }}')" 
+                                    <button onclick="abrirModalEdicion('{{ $docente->docente_id }}', '{{ addslashes($nombre) }}', '{{ addslashes($paterno) }}', '{{ addslashes($materno) }}', '{{ addslashes($correo) }}', '{{ addslashes($telefono) }}', '{{ $docente->activo }}')" 
                                             class="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-[#841B44] transition-colors inline-flex items-center cursor-pointer" 
                                             title="Editar información del docente">
                                         <span class="material-icons-round text-sm">edit</span>
@@ -242,7 +277,7 @@
         // Asignamos la ruta dinámica para la petición PUT
         form.action = `/admon/docentes/${id}`;
 
-        // Llenamos los inputs del modal con la información actual del registro
+        // Carga de campos limpios descifrados en los inputs
         document.getElementById('edit_nombre').value = nombre;
         document.getElementById('edit_apellido_paterno').value = paterno;
         document.getElementById('edit_apellido_materno').value = materno ?? '';
@@ -250,7 +285,7 @@
         document.getElementById('edit_telefono').value = telefono ?? '';
         document.getElementById('edit_activo').value = activo ? '1' : '0';
 
-        // Mostramos el modal
+        // Apertura visual del modal
         modal.classList.remove('opacity-0', 'pointer-events-none');
         box.classList.remove('scale-95');
         box.classList.add('scale-100');

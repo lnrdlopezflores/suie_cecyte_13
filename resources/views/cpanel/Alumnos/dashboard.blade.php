@@ -56,7 +56,7 @@
             <div>
                 <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Semestre Cursando</p>
                 <p class="text-sm font-black text-slate-800">
-                    {{ $infoAlumno->semestre ?? 'N/A' }}° Grado
+                    {{ $infoAlumno->semestre ?? 'N/A' }}° Semestre
                 </p>
             </div>
         </div>

@@ -15,6 +15,7 @@ use App\Http\Controllers\AlumnoPortalController;
 use App\Http\Controllers\AlumnoMateriasController;
 use App\Http\Controllers\AlumnoPagosController;
 use App\Http\Controllers\ValidarPagoController;
+use App\Http\Controllers\titulacionController;
 
 Route::get('/', function () {
     return view('cpanel/home/landing');
@@ -38,6 +39,12 @@ Route::middleware(['auth', 'rol:Estudiante'])->group(function () {
     Route::resource('/alumno/materias', AlumnoMateriasController::class)->names('indexmaterias');
     Route::resource('/alumno/pagos', AlumnoPagosController::class)->names('alumnoPagos');
     Route::post('/alumno/pagos/reportar', [AlumnoPagosController::class, 'store'])->name('alumno.pagos.store');
+    Route::resource('/alumno/titulacion', titulacionController::class)->names('titulacion');
+    Route::post('/alumno/titulacion/agregar-integrante', [titulacionController::class, 'agregarCompanero'])->name('titulacion.agregar-companero');
+    Route::post('/alumno/titulacion/asignar-asesor', [titulacionController::class, 'asignarAsesor'])->name('titulacion.asignar-asesor');
+    Route::get('/alumno/titulacion/repositorio/{proyectoId}', [titulacionController::class, 'repositorio'])->name('titulacion.repositorio');
+    Route::post('/alumno/titulacion/repositorio/guardar-entregable', [titulacionController::class, 'guardarEntregable'])->name('titulacion.guardar-entregable');
+    Route::post('/alumno/titulacion/repositorio/guardar-video', [titulacionController::class, 'guardarVideo'])->name('titulacion.guardar-video');
 });
 
 Route::middleware(['auth', 'rol:Control Escolar'])->group(function () {
