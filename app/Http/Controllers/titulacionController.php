@@ -13,15 +13,29 @@ class titulacionController extends Controller
      */
     // En titulacionController.php
 
+// En app/Http/Controllers/titulacionController.php
+
 public function index()
 {
     $userId = Auth::id();
-    $alumno = DB::table('alumnos')->where('usuario_id', $userId)->first();
+
+    // 1. Obtener al alumno y verificar su semestre mediante la relación con grupos
+    $alumno = DB::table('alumnos')
+        ->leftJoin('grupos', 'alumnos.grupo_id', '=', 'grupos.id')
+        ->select('alumnos.id', 'grupos.semestre')
+        ->where('alumnos.usuario_id', $userId)
+        ->first();
 
     if (!$alumno) {
         return redirect()->route('indexalumnos.index')->with('error', 'No se encontró tu expediente estudiantil.');
     }
 
+    // REGLA 1: Solo permitir acceso si el alumno está en 6to semestre
+    if (($alumno->semestre ?? 0) < 6) {
+        return redirect()->route('indexalumnos.index')->with('error', 'El trámite de titulación está disponible únicamente para estudiantes de 6° semestre.');
+    }
+
+    // Cargar proyecto
     $proyecto = DB::table('proyectos_titulacion')
         ->join('proyecto_alumno', 'proyectos_titulacion.id', '=', 'proyecto_alumno.proyecto_id')
         ->select('proyectos_titulacion.*')
@@ -39,17 +53,12 @@ public function index()
             ->where('proyecto_alumno.proyecto_id', $proyecto->id)
             ->get();
 
-        // CÓDIGO CORREGIDO:
         $asesorId = $proyecto->docente_asesor_id ?? $proyecto->asesor_id ?? null;
-
         if ($asesorId) {
-            $asesor = DB::table('docentes')
-                ->where('id', $asesorId)
-                ->first();
+            $asesor = DB::table('docentes')->where('id', $asesorId)->first();
         }
     }
 
-    // Cargar docentes activos para el selector de asesor
     $docentes = DB::table('docentes')
         ->join('usuarios', 'docentes.usuario_id', '=', 'usuarios.id')
         ->select('docentes.id', 'docentes.nombre', 'docentes.apellido_paterno', 'usuarios.username')

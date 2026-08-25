@@ -64,10 +64,57 @@
                         <a href="{{ route('alumnoPagos.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors {{ request()->routeIs('alumnoPagos.index') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 hover:text-slate-200' }}">
                             <span class="material-icons-round text-sm">payments</span> Control de Pagos
                         </a>
-                        <!-- MÓDULO DE TITULACIÓN AÑADIDO -->
-                        <a href="{{ route('titulacion.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors {{ request()->routeIs('titulacion.*') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 hover:text-slate-200' }}">
-                            <span class="material-icons-round text-sm">history_edu</span> Proyectos de Titulación
-                        </a>
+
+                        @php
+                            // Consultamos el semestre y estatus de titulación del alumno autenticado
+                            $alumnoGlobal = DB::table('alumnos')
+                                ->leftJoin('grupos', 'alumnos.grupo_id', '=', 'grupos.id')
+                                ->select('alumnos.id', 'grupos.semestre')
+                                ->where('alumnos.usuario_id', auth()->id())
+                                ->first();
+
+                            $semestreAlumno = $alumnoGlobal->semestre ?? 0;
+
+                            $proyectoGlobal = null;
+                            if ($alumnoGlobal) {
+                                $proyectoGlobal = DB::table('proyectos_titulacion')
+                                    ->join('proyecto_alumno', 'proyectos_titulacion.id', '=', 'proyecto_alumno.proyecto_id')
+                                    ->select('proyectos_titulacion.estatus')
+                                    ->where('proyecto_alumno.alumno_id', $alumnoGlobal->id)
+                                    ->first();
+                            }
+
+                            $proyectoAprobado = ($proyectoGlobal && $proyectoGlobal->estatus === 'Aprobado');
+                        @endphp
+
+                        <!-- 1. MÓDULO: PROYECTOS DE TITULACIÓN (Solo 6to Semestre) -->
+                        @if($semestreAlumno >= 6)
+                            <a href="{{ route('titulacion.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors {{ request()->routeIs('titulacion.*') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 hover:text-slate-200' }}">
+                                <span class="material-icons-round text-sm">history_edu</span> Proyectos de Titulación
+                            </a>
+                        @else
+                            <button type="button" onclick="mostrarAlertaBloqueo('ModuloBloqueadoSemestre')" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-800/50 hover:text-slate-400 transition-colors cursor-pointer">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-icons-round text-sm">history_edu</span> Proyectos de Titulación
+                                </div>
+                                <span class="material-icons-round text-xs text-amber-500">lock</span>
+                            </button>
+                        @endif
+
+                        <!-- 2. MÓDULO: PROCESO DE TITULACIÓN (Solo si el Proyecto está Aprobado) -->
+                        @if($semestreAlumno >= 6 && $proyectoAprobado)
+                            <a href="{{ route('proceso.titulacion.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors {{ request()->routeIs('proceso.titulacion.*') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 hover:text-slate-200' }}">
+                                <span class="material-icons-round text-sm">assignment_turned_in</span> Proceso de Titulación
+                            </a>
+                        @else
+                            <button type="button" onclick="mostrarAlertaBloqueo('ModuloBloqueadoProyecto')" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-800/50 hover:text-slate-400 transition-colors cursor-pointer">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-icons-round text-sm">assignment_turned_in</span> Proceso de Titulación
+                                </div>
+                                <span class="material-icons-round text-xs text-amber-500">lock</span>
+                            </button>
+                        @endif
+
                     </nav>
                 </div>
             </div>
@@ -88,6 +135,24 @@
 
     </div>
 
+    <!-- MODAL DE ALERTA DE MÓDULO BLOQUEADO -->
+    <div id="modalBloqueo" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden p-6 text-center space-y-4">
+            <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto border border-amber-100">
+                <span class="material-icons-round text-2xl">lock</span>
+            </div>
+
+            <div class="space-y-1">
+                <h3 id="tituloBloqueo" class="text-sm font-extrabold text-slate-900">Acceso Restringido</h3>
+                <p id="mensajeBloqueo" class="text-xs text-slate-500 leading-relaxed"></p>
+            </div>
+
+            <button onclick="cerrarAlertaBloqueo()" class="w-full py-2.5 bg-[#841B44] hover:bg-[#681535] text-white font-bold rounded-xl transition-colors cursor-pointer text-xs">
+                Entendido
+            </button>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const btnToggle = document.getElementById('btn-toggle-sidebar');
@@ -105,6 +170,26 @@
                 overlay.addEventListener('click', toggleSidebar);
             }
         });
+
+        function mostrarAlertaBloqueo(tipo) {
+            const modal = document.getElementById('modalBloqueo');
+            const titulo = document.getElementById('tituloBloqueo');
+            const mensaje = document.getElementById('mensajeBloqueo');
+
+            if (tipo === 'ModuloBloqueadoSemestre') {
+                titulo.innerText = 'Trámite no Disponible';
+                mensaje.innerText = 'El módulo de Proyectos de Titulación se habilita únicamente para estudiantes inscritos en el 6° semestre.';
+            } else if (tipo === 'ModuloBloqueadoProyecto') {
+                titulo.innerText = 'Proyecto en Revisión o No Registrado';
+                mensaje.innerText = 'El Proceso de Titulación (carga de documentos oficiales) estará disponible una vez que tu proyecto de titulación haya sido aprobado por el comité evaluador.';
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function cerrarAlertaBloqueo() {
+            document.getElementById('modalBloqueo').classList.add('hidden');
+        }
     </script>
 
 </body>

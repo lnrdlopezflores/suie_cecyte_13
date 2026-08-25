@@ -1,7 +1,5 @@
 @extends('cpanel/plantillaestudiante')
-
 @section('title', 'Trámite de Titulación')
-
 @section('content')
 <main class="p-4 md:p-6 space-y-6 max-w-7xl w-full mx-auto text-xs">
     <!-- Mensajes de Notificación -->
@@ -148,9 +146,14 @@
 
                     <!-- Integrantes del Equipo -->
                     <div class="pt-2 space-y-3">
-                        <h4 class="font-bold text-slate-900 flex items-center gap-1.5">
-                            <span class="material-icons-round text-slate-400 text-sm">groups</span> Integrantes Registrados
-                        </h4>
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-slate-900 flex items-center gap-1.5">
+                                <span class="material-icons-round text-slate-400 text-sm">groups</span> Integrantes Registrados
+                            </h4>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border {{ $integrantes->count() >= 3 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200' }}">
+                                {{ $integrantes->count() }} / 3 Integrantes
+                            </span>
+                        </div>
 
                         <div class="divide-y divide-slate-100">
                             @foreach($integrantes as $integrante)
@@ -195,25 +198,38 @@
                     <h3 class="font-bold text-slate-900 flex items-center gap-1.5">
                         <span class="material-icons-round text-[#841B44] text-sm">person_add</span> Vincular Compañero
                     </h3>
-                    <p class="text-slate-500 leading-relaxed">
-                        Ingresa la matrícula oficial del estudiante para integrarlo a tu equipo de titulación.
-                    </p>
+                    
+                    @if($integrantes->count() < 3)
+                        <p class="text-slate-500 leading-relaxed">
+                            Ingresa la matrícula oficial del estudiante para integrarlo a tu equipo de titulación (Máximo 3 alumnos por equipo).
+                        </p>
 
-                    <form action="{{ route('titulacion.agregar-companero') }}" method="POST" class="space-y-3">
-                        @csrf
-                        <input type="hidden" name="proyecto_id" value="{{ $proyecto->id }}">
+                        <form action="{{ route('titulacion.agregar-companero') }}" method="POST" class="space-y-3">
+                            @csrf
+                            <input type="hidden" name="proyecto_id" value="{{ $proyecto->id }}">
 
-                        <div>
-                            <label class="block font-bold text-slate-700 mb-1">Matrícula del Estudiante *</label>
-                            <input type="text" name="username" required
-                                   class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono font-bold text-slate-800 focus:ring-1 focus:ring-[#841B44]"
-                                   placeholder="Ej: 22240105">
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">Matrícula del Estudiante *</label>
+                                <input type="text" name="username" required
+                                       class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono font-bold text-slate-800 focus:ring-1 focus:ring-[#841B44]"
+                                       placeholder="Ej: 22240105">
+                            </div>
+
+                            <button type="submit" class="w-full py-2.5 bg-[#841B44] hover:bg-[#681535] text-white font-bold rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1">
+                                <span class="material-icons-round text-sm">group_add</span> Agregar al Equipo
+                            </button>
+                        </form>
+                    @else
+                        <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs space-y-1.5">
+                            <div class="flex items-center gap-1.5 font-bold">
+                                <span class="material-icons-round text-base">info</span>
+                                Límite de Equipo Alcanzado
+                            </div>
+                            <p class="text-[11px] leading-relaxed">
+                                Este equipo ha registrado el cupo máximo permitido (3 integrantes). No es posible vincular a más estudiantes.
+                            </p>
                         </div>
-
-                        <button type="submit" class="w-full py-2.5 bg-[#841B44] hover:bg-[#681535] text-white font-bold rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1">
-                            <span class="material-icons-round text-sm">group_add</span> Agregar al Equipo
-                        </button>
-                    </form>
+                    @endif
                 </div>
             </div>
 
