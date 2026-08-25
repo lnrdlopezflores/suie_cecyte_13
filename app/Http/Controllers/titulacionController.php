@@ -8,12 +8,6 @@ use Illuminate\Support\Facades\Auth;
 
 class titulacionController extends Controller
 {
-    /**
-     * Muestra la vista principal del trámite de titulación.
-     */
-    // En titulacionController.php
-
-// En app/Http/Controllers/titulacionController.php
 
 public function index()
 {
