@@ -98,14 +98,37 @@
                             </span>
                             <h3 class="text-base font-extrabold text-slate-900 mt-2">{{ $proyecto->titulo }}</h3>
                         </div>
-                        <span class="px-2.5 py-1 text-[10px] font-bold rounded-full uppercase border shrink-0
+
+                        <!-- BADGE DE ESTATUS ACTUALIZADO -->
+                        <span class="px-3 py-1 text-[10px] font-bold rounded-full uppercase border shrink-0 flex items-center gap-1
                             {{ $proyecto->estatus == 'Aprobado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : '' }}
                             {{ $proyecto->estatus == 'Pendiente' ? 'bg-amber-50 text-amber-700 border-amber-200' : '' }}
-                            {{ $proyecto->estatus == 'En Revision' ? 'bg-blue-50 text-blue-700 border-blue-200' : '' }}
+                            {{ $proyecto->estatus == 'En_Revision' || $proyecto->estatus == 'En Revision' ? 'bg-blue-50 text-blue-700 border-blue-200' : '' }}
+                            {{ $proyecto->estatus == 'Liberado_Exposicion' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : '' }}
+                            {{ $proyecto->estatus == 'Rechazado' ? 'bg-rose-50 text-rose-700 border-rose-200' : '' }}
                         ">
-                            Estatus: {{ $proyecto->estatus }}
+                            @if($proyecto->estatus == 'Liberado_Exposicion')
+                                <span class="material-icons-round text-xs">record_voice_over</span> Liberado para Exposición
+                            @elseif($proyecto->estatus == 'Aprobado')
+                                <span class="material-icons-round text-xs">verified</span> Aprobado
+                            @else
+                                Estatus: {{ str_replace('_', ' ', $proyecto->estatus) }}
+                            @endif
                         </span>
                     </div>
+
+                    <!-- BANNER INFORMATIVO SI ESTÁ LIBERADO PARA EXPOSICIÓN -->
+                    @if($proyecto->estatus == 'Liberado_Exposicion')
+                        <div class="p-4 bg-indigo-50/80 border border-indigo-200 rounded-xl text-indigo-900 space-y-1">
+                            <div class="flex items-center gap-1.5 font-bold text-xs">
+                                <span class="material-icons-round text-sm text-indigo-600">how_to_vote</span>
+                                Protocolo y Entregables Liberados para Defensa
+                            </div>
+                            <p class="text-[11px] text-indigo-700 leading-relaxed">
+                                Tu docente asesor ha autorizado este proyecto. Actualmente se encuentra en proceso de evaluación por parte del sínodo examinador (se requiere la aprobación mínima de 2 de los 3 jurados para habilitar tu Proceso de Titulación oficial).
+                            </p>
+                        </div>
+                    @endif
 
                     @if($proyecto->resumen)
                         <p class="text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200/60">
@@ -137,11 +160,13 @@
                             </div>
                         </div>
 
-                        <!-- Botón para Vincular/Cambiar Asesor -->
-                        <button onclick="document.getElementById('modalAsesor').classList.remove('hidden')" 
-                                class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold rounded-lg transition-colors cursor-pointer shrink-0 text-[11px] flex items-center justify-center gap-1">
-                            <span class="material-icons-round text-sm">person_add_alt</span> {{ isset($asesor) && $asesor ? 'Cambiar Asesor' : 'Asignar Asesor' }}
-                        </button>
+                        <!-- Botón para Vincular/Cambiar Asesor (Se bloquea si ya está aprobado o liberado) -->
+                        @if(!in_array($proyecto->estatus, ['Liberado_Exposicion', 'Aprobado']))
+                            <button onclick="document.getElementById('modalAsesor').classList.remove('hidden')" 
+                                    class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold rounded-lg transition-colors cursor-pointer shrink-0 text-[11px] flex items-center justify-center gap-1">
+                                <span class="material-icons-round text-sm">person_add_alt</span> {{ isset($asesor) && $asesor ? 'Cambiar Asesor' : 'Asignar Asesor' }}
+                            </button>
+                        @endif
                     </div>
 
                     <!-- Integrantes del Equipo -->
@@ -185,7 +210,7 @@
                     <div class="pt-4 border-t border-slate-100 flex justify-end">
                         <a href="{{ route('titulacion.repositorio', $proyecto->id) }}" 
                            class="w-full sm:w-auto px-6 py-3 bg-[#841B44] hover:bg-[#681535] text-white font-extrabold rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2 text-xs">
-                            <span class="material-icons-round text-base">folder_open</span> Ir al Repositorio del Proyecto
+                            <span class="material-icons-round text-base">folder_open</span> Repositorio de Entregables
                             <span class="material-icons-round text-sm">arrow_forward</span>
                         </a>
                     </div>
@@ -199,7 +224,17 @@
                         <span class="material-icons-round text-[#841B44] text-sm">person_add</span> Vincular Compañero
                     </h3>
                     
-                    @if($integrantes->count() < 3)
+                    @if(in_array($proyecto->estatus, ['Liberado_Exposicion', 'Aprobado']))
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 text-xs space-y-1.5">
+                            <div class="flex items-center gap-1.5 font-bold text-slate-800">
+                                <span class="material-icons-round text-base text-indigo-600">lock</span>
+                                Registro de Equipo Cerrado
+                            </div>
+                            <p class="text-[11px] leading-relaxed">
+                                El proyecto se encuentra en etapa de dictaminación o aprobación. La estructura de integrantes ya no puede ser modificada.
+                            </p>
+                        </div>
+                    @elseif($integrantes->count() < 3)
                         <p class="text-slate-500 leading-relaxed">
                             Ingresa la matrícula oficial del estudiante para integrarlo a tu equipo de titulación (Máximo 3 alumnos por equipo).
                         </p>

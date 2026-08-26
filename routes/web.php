@@ -16,6 +16,8 @@ use App\Http\Controllers\AlumnoMateriasController;
 use App\Http\Controllers\AlumnoPagosController;
 use App\Http\Controllers\ValidarPagoController;
 use App\Http\Controllers\titulacionController;
+use App\Http\Controllers\DocenteTitulacionController;
+
 
 Route::get('/', function () {
     return view('cpanel/home/landing');
@@ -60,7 +62,11 @@ Route::middleware(['auth', 'rol:Docente'])->group(function () {
     Route::resource('/docente/index', DashboardDocenteController::class)->names('dashboardDocente');
     Route::get('/docente/asistencia/tomar/{cargaId}', [AsistenciaController::class, 'tomarAsistencia'])->name('asistencia.tomar');  
     Route::post('/docente/asistencia/guardar/{cargaId}', [AsistenciaController::class, 'guardarAsistencia'])->name('asistencia.guardar');
+    Route::get('/titulacion/asesorados', [DocenteTitulacionController::class, 'index'])->name('docente.titulacion.asesorados');
+    Route::post('/titulacion/evaluar', [DocenteTitulacionController::class, 'evaluar'])->name('docente.titulacion.evaluar');
+    Route::post('/titulacion/votar-jurado', [DocenteTitulacionController::class, 'votarJurado'])->name('docente.titulacion.votar-jurado');
 });
+
 
 Route::resource('/finanzas/pagos', ValidarPagoController::class)->names('contador.pagos');
 Route::get('/finanzas/pagos/{id}/revisar', [ValidarPagoController::class, 'revisar'])->name('contador.pagos.revisar');

@@ -11,7 +11,6 @@
         if ($docente && !empty($docente->nombre)) {
             $rawNombre = str_replace(' (Plain)', '', $docente->nombre);
             
-            // Si el nombre tiene formato de cadena cifrada en Base64 (empieza con 'ey' y es largo)
             if (is_string($rawNombre) && (str_starts_with($rawNombre, 'ey') || strlen($rawNombre) > 50)) {
                 try {
                     $nombreDocente = decrypt($rawNombre);
@@ -30,14 +29,30 @@
                 ¡Bienvenido de vuelta, {{ $nombreDocente }}!
             </h2>
             <p class="text-xs text-slate-500">
-                Ciclo Escolar Activo: <span class="font-semibold text-indigo-700">2026 - 2027</span> • Revisa tus asignaturas y grupos cargados.
+                Ciclo Escolar Activo: <span class="font-semibold text-indigo-700">2026 - 2027</span> • Revisa tus asignaturas.
             </p>
         </div>
-        <div class="bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl text-center shrink-0">
-            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Clases de Hoy</p>
-            <p class="text-lg font-black text-slate-800">
-                {{ $clasesHoy ?? '0' }} {{ Str::plural('Sesión', $clasesHoy ?? 0) }}
-            </p>
+
+        <div class="flex items-center gap-3">
+            <!-- BOTÓN AÑADIDO: PROYECTOS ASESORADOS -->
+             
+            <a href="{{ route('docente.titulacion.asesorados') }}" class="px-4 py-2.5 bg-[#841B44] hover:bg-[#681535] text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2 cursor-pointer shrink-0 " disabled>
+                <span class="material-icons-round text-base ">supervisor_account</span> Proyectos Asesorados
+            </a>
+           
+
+            <!--
+            <a class="px-4 py-2.5 bg-slate-200 text-slate-400 text-xs font-bold rounded-xl shadow-xs flex items-center gap-2 shrink-0 pointer-events-none cursor-not-allowed select-none">
+                <span class="material-icons-round text-base text-slate-400">supervisor_account</span> Proyectos Asesorados
+            </a>
+            -->
+
+            <div class="bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl text-center shrink-0">
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Clases de Hoy</p>
+                <p class="text-lg font-black text-slate-800">
+                    {{ $clasesHoy ?? '0' }} {{ Str::plural('Sesión', $clasesHoy ?? 0) }}
+                </p>
+            </div>
         </div>
     </div>
 
@@ -49,7 +64,6 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
         @forelse($materias as $materia)
             <div class="bg-white rounded-2xl border border-slate-200 shadow-3xs overflow-hidden flex flex-col justify-between group hover:border-indigo-500/50 transition-colors">
                 <div class="p-5 space-y-4">
@@ -101,7 +115,6 @@
                 No tienes asignaturas asignadas para este ciclo escolar.
             </div>
         @endforelse
-
     </div>
 </main>
 @endsection

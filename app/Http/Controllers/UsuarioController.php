@@ -5,130 +5,115 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class UsuarioController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $buscar = $request->input('buscar');
-        $rol = $request->input('rol');
+        return $this->cargarVista();
+    }
 
-        // Inicializamos el Query Builder sobre tu tabla usuarios
-        $query = DB::table('usuarios');
+    public function create()
+    {
+        return $this->cargarVista();
+    }
 
-        // Aplicamos filtro de búsqueda si el administrador escribió algo
-        if (!empty($buscar)) {
-            $query->where('username', 'LIKE', '%' . $buscar . '%');
-        }
+    private function cargarVista()
+    {
+        $usuarios = DB::table('usuarios')
+            ->leftJoin('alumnos', 'usuarios.id', '=', 'alumnos.usuario_id')
+            ->leftJoin('docentes', 'usuarios.id', '=', 'docentes.usuario_id')
+            ->select(
+                'usuarios.*',
+                DB::raw('COALESCE(alumnos.nombre, docentes.nombre) as nombre'),
+                DB::raw('COALESCE(alumnos.apellido_paterno, docentes.apellido_paterno) as apellido_paterno')
+            )
+            ->orderBy('usuarios.id', 'desc')
+            ->paginate(10);
 
-        // Aplicamos filtro por Rol si se seleccionó una opción del combo
-        if (!empty($rol)) {
-            $query->where('rol', $rol);
-        }
+        return view('cpanel.usuarios.createusuario', compact('usuarios'));
+    }
 
-        // Recuperamos los datos paginados
-        $usuarios = $query->orderBy('created_at', 'desc')->paginate(15);
+    public function store(Request $request)
+    {
+        $request->validate([
+            'username'         => ['required', 'string', 'max:50', 'unique:usuarios,username'],
+            'password'         => ['required', 'string', 'min:6'],
+            'rol'              => ['required', 'string', 'in:Estudiante,Docente,Orientador,Control Escolar,Coordinador,administrador'],
+            'nombre'           => ['required', 'string', 'max:150'],
+            'apellido_paterno' => ['required', 'string', 'max:150'],
+            'apellido_materno' => ['nullable', 'string', 'max:150'],
+            'nombre_tutor'     => ['nullable', 'string', 'max:200'],
+            'telefono_tutor'   => ['nullable', 'string', 'max:50'],
+            'correo'           => ['nullable', 'email', 'max:150'],
+            'telefono'         => ['nullable', 'string', 'max:50'],
+        ]);
 
-        return view('cpanel/usuarios/indexusuario', compact('usuarios'));
+        DB::transaction(function () use ($request) {
+            $rol = $request->input('rol');
+
+            $usuarioId = DB::table('usuarios')->insertGetId([
+                'username'   => $request->input('username'),
+                'password'   => Hash::make($request->input('password')),
+                'rol'        => $rol,
+                'activo'     => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $nombreCifrado  = encrypt($request->input('nombre'));
+            $paternoCifrado = encrypt($request->input('apellido_paterno'));
+            $maternoCifrado = $request->filled('apellido_materno') ? encrypt($request->input('apellido_materno')) : null;
+
+            if ($rol === 'Estudiante') {
+                DB::table('alumnos')->insert([
+                    'usuario_id'       => $usuarioId,
+                    'grupo_id'         => null,
+                    'nombre'           => $nombreCifrado,
+                    'apellido_paterno' => $paternoCifrado,
+                    'apellido_materno' => $maternoCifrado,
+                    'nombre_tutor'     => $request->filled('nombre_tutor') ? encrypt($request->input('nombre_tutor')) : null,
+                    'telefono_tutor'   => $request->filled('telefono_tutor') ? encrypt($request->input('telefono_tutor')) : null,
+                ]);
+            } elseif ($rol === 'Docente') {
+                DB::table('docentes')->insert([
+                    'usuario_id'       => $usuarioId,
+                    'nombre'           => $nombreCifrado,
+                    'apellido_paterno' => $paternoCifrado,
+                    'apellido_materno' => $maternoCifrado,
+                    'correo'           => $request->filled('correo') ? encrypt($request->input('correo')) : null,
+                    'telefono'         => $request->filled('telefono') ? encrypt($request->input('telefono')) : null,
+                ]);
+            }
+        });
+
+        return redirect()->back()->with('success', 'Usuario y expediente registrados exitosamente.');
     }
 
     /**
-     * Cambia el estado (activo/inactivo) del usuario seleccionado.
+     * Alterna el estatus del usuario entre Activo (1) y Suspendido (0).
      */
     public function toggleStatus($id)
     {
-        // 1. Buscar al usuario actual
-        $user = DB::table('usuarios')->where('id', $id)->first();
-
-        if (!$user) {
-            return redirect()->back()->with('error', 'El usuario solicitado no existe.');
+        if (Auth::id() == $id) {
+            return redirect()->back()->with('error', 'No puedes suspender tu propia cuenta de administrador.');
         }
 
-        // Evitar que el administrador se autosuspenda si está logueado con esta clave
-        if (auth()->user()->id == $id) {
-            return redirect()->back()->with('error', 'No puedes suspender tu propia cuenta administrativa.');
+        $usuario = DB::table('usuarios')->where('id', $id)->first();
+
+        if (!$usuario) {
+            return redirect()->back()->with('error', 'El usuario especificado no existe.');
         }
 
-        // 2. Invertir el estatus binario
-        $nuevoEstatus = $user->activo == 1 ? 0 : 1;
+        $nuevoEstatus = $usuario->activo ? 0 : 1;
 
-        DB::table('usuarios')
-            ->where('id', $id)
-            ->update([
-                'activo' => $nuevoEstatus,
-                'updated_at' => now()
-            ]);
-
-        $msg = $nuevoEstatus ? 'reactivado' : 'suspendido temporalmente';
-
-        return redirect()
-            ->back()
-            ->with('success', 'El usuario "' . $user->username . '" ha sido ' . $msg . ' con éxito.');
-    }
-    /**
-     * Muestra el formulario de registro y la bitácora paginada.
-     */
-    public function create()
-    {
-        // Recuperamos los usuarios ordenados por fecha de creación decreciente (últimos primero)
-        $usuarios = DB::table('usuarios')
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
-
-        return view('cpanel/usuarios/createusuario', compact('usuarios'));
-    }
-
-    /**
-     * Almacena el nuevo usuario encriptando la credencial.
-     */
-    public function store(Request $request)
-    {
-        // Validamos estrictamente basándonos en tu estructura ENUM de MySQL
-        $request->validate([
-            'username' => ['required', 'string', 'max:50', 'unique:usuarios,username'],
-            'password' => ['required', 'string', 'min:6'],
-            'rol'      => ['required', 'in:Estudiante,Docente,Orientador,Control Escolar,coordinador,administrador'],
-        ], [
-            'username.unique' => 'Esta matrícula o clave de empleado ya se encuentra registrada en el SUIE.',
-            'rol.in'          => 'El rol seleccionado no es válido dentro de la configuración matricular.'
-        ]);
-
-        // Insertamos usando Query Builder y la fachada Hash por seguridad
-        DB::table('usuarios')->insert([
-            'username'   => $request->input('username'),
-            'password'   => Hash::make($request->input('password')), // BCrypt directo
-            'rol'        => $request->input('rol'),
-            'activo'     => 1,
-            'created_at' => now(),
-            'updated_at' => now()
-        ]);
-
-        return redirect()
-            ->route('usuarios.create')
-            ->with('success', 'El usuario "' . $request->input('username') . '" ha sido incorporado al sistema de forma exitosa.');
-    }
-
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'rol'      => ['required', 'string', 'in:Estudiante,Docente,Orientador,Control Escolar,coordinador,administrador'],
-            'activo'   => ['required', 'boolean'],
-            'password' => ['nullable', 'string', 'min:6'],
-        ]);
-
-        $dataUpdate = [
-            'rol'        => $request->input('rol'),
-            'activo'     => $request->input('activo'),
+        DB::table('usuarios')->where('id', $id)->update([
+            'activo'     => $nuevoEstatus,
             'updated_at' => now(),
-        ];
+        ]);
 
-        // Solo se reencripta la contraseña si el usuario escribió una nueva
-        if ($request->filled('password')) {
-            $dataUpdate['password'] = bcrypt($request->input('password'));
-        }
-
-        DB::table('usuarios')->where('id', $id)->update($dataUpdate);
-
-        return redirect()->route('usuarios.index')->with('success', 'Cuenta de usuario modificada correctamente.');
+        $accion = $nuevoEstatus ? 'reactivado' : 'suspendido';
+        return redirect()->back()->with('success', "El usuario {$usuario->username} ha sido {$accion} correctamente.");
     }
 }

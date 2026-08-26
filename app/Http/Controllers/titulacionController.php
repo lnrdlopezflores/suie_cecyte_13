@@ -164,89 +164,71 @@ public function asignarAsesor(Request $request)
         return redirect()->route('titulacion.index')->with('success', 'Compañero agregado exitosamente al equipo.');
     }
 
-    public function repositorio($proyectoId)
-    {
-        $proyecto = DB::table('proyectos_titulacion')->where('id', $proyectoId)->first();
+public function repositorio($proyectoId)
+{
+    $proyecto = DB::table('proyectos_titulacion')->where('id', $proyectoId)->first();
 
-        if (!$proyecto) {
-            return redirect()->route('titulacion.index')->with('error', 'El proyecto especificado no existe.');
-        }
-
-        // Obtener asesor si está asignado
-        $asesor = null;
-        $asesorId = $proyecto->docente_asesor_id ?? $proyecto->asesor_id ?? null;
-        if ($asesorId) {
-            $asesor = DB::table('docentes')->where('id', $asesorId)->first();
-        }
-
-        // Cargar documentos entregados mapeados por tipo
-        $documentosDB = DB::table('documentos_titulacion')
-            ->where('alumno_id', $proyecto->alumno_id)
-            ->get();
-
-        $documentos = [];
-        foreach ($documentosDB as $doc) {
-            $documentos[$doc->tipo_documento] = $doc;
-        }
-
-        return view('cpanel.titulacion.repositorio', compact('proyecto', 'asesor', 'documentos'));
+    if (!$proyecto) {
+        return redirect()->route('titulacion.index')->with('error', 'El proyecto no existe.');
     }
 
-/**
- * Guarda o actualiza los archivos PDF/PPTX del entregable.
- */
-    public function guardarEntregable(Request $request)
-    {
-        $request->validate([
-            'proyecto_id' => ['required', 'integer', 'exists:proyectos_titulacion,id'],
-            'tipo'        => ['required', 'string', 'in:Reporte,Presentacion'],
-            'archivo'     => ['required', 'file', 'mimes:pdf,pptx,ppt', 'max:30720'], // Máx 30MB
-        ]);
-
-        $proyecto = DB::table('proyectos_titulacion')->where('id', $request->input('proyecto_id'))->first();
-
-        if ($request->hasFile('archivo')) {
-            $file = $request->file('archivo');
-            $nombreOriginal = $file->getClientOriginalName();
-            // Guardar archivo en el disco público dentro de la carpeta entregables
-            $path = $file->store('entregables_titulacion', 'public');
-
-            DB::table('documentos_titulacion')->updateOrInsert(
-                [
-                    'alumno_id'      => $proyecto->alumno_id,
-                    'tipo_documento' => $request->input('tipo')
-                ],
-                [
-                    'nombre_archivo' => $nombreOriginal,
-                    'ruta_archivo'   => $path,
-                    'version'        => DB::raw('version + 1'),
-                    'estatus'        => 'En_Revision',
-                    'updated_at'     => now(),
-                    'created_at'     => now(),
-                ]
-            );
-        }
-
-        return redirect()->back()->with('success', 'El entregable fue cargado correctamente en el repositorio.');
+    $asesor = null;
+    $asesorId = $proyecto->docente_asesor_id ?? null;
+    if ($asesorId) {
+        $asesor = DB::table('docentes')->where('id', $asesorId)->first();
     }
 
-/**
- * Guarda el enlace del video demostrativo.
- */
-    public function guardarVideo(Request $request)
-    {
-        $request->validate([
-            'proyecto_id' => ['required', 'integer', 'exists:proyectos_titulacion,id'],
-            'video_url'   => ['required', 'url', 'max:500'],
-        ]);
+    return view('cpanel.titulacion.repositorio', compact('proyecto', 'asesor'));
+}
 
+/**
+ * Carga de archivos (Reporte o Presentación) directo a proyectos_titulacion
+ */
+public function guardarEntregable(Request $request)
+{
+    $request->validate([
+        'proyecto_id' => ['required', 'integer', 'exists:proyectos_titulacion,id'],
+        'tipo'        => ['required', 'string', 'in:Reporte,Presentacion'],
+        'archivo'     => ['required', 'file', 'mimes:pdf,pptx,ppt', 'max:30720'],
+    ]);
+
+    if ($request->hasFile('archivo')) {
+        $file = $request->file('archivo');
+        $campo = ($request->input('tipo') === 'Reporte') ? 'documento_url' : 'presentacion_url';
+        
+        // Guardar archivo en public storage
+        $ruta = $file->store('entregables_titulacion', 'public');
+
+        // Actualizar directamente la tabla proyectos_titulacion
         DB::table('proyectos_titulacion')
             ->where('id', $request->input('proyecto_id'))
             ->update([
-                'video_url'  => $request->input('video_url'),
+                $campo       => $ruta,
+                'estatus'    => 'En_Revision',
                 'updated_at' => now(),
             ]);
-
-        return redirect()->back()->with('success', 'Enlace del video demostrativo guardado con éxito.');
     }
+
+    return redirect()->back()->with('success', 'Archivo subido y guardado exitosamente en el proyecto.');
+}
+
+/**
+ * Carga de enlace de Video directo a proyectos_titulacion
+ */
+public function guardarVideo(Request $request)
+{
+    $request->validate([
+        'proyecto_id' => ['required', 'integer', 'exists:proyectos_titulacion,id'],
+        'video_url'   => ['required', 'url', 'max:500'],
+    ]);
+
+    DB::table('proyectos_titulacion')
+        ->where('id', $request->input('proyecto_id'))
+        ->update([
+            'video_url'  => $request->input('video_url'),
+            'updated_at' => now(),
+        ]);
+
+    return redirect()->back()->with('success', 'Enlace del video demostrativo actualizado.');
+}
 }
