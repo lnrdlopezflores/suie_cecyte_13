@@ -46,12 +46,6 @@
                 </a>
             @endif
         </form>
-
-        <div class="shrink-0 w-full md:w-auto text-right">
-            <a href="{{ route('docentes.create') }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#841B44] hover:bg-[#631433] text-white text-xs font-bold rounded-xl shadow-2xs transition-colors cursor-pointer">
-                <span class="material-icons-round text-sm">badge</span> Alta de Docente
-            </a>
-        </div>
     </div>
 
     <!-- Tabla Principal de Docentes -->
