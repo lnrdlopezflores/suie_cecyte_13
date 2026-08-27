@@ -1,37 +1,63 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SUIE - @yield('title')</title>
+    
+    <!-- Tailwind CSS v4 Browser -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    
+    <!-- Configuración para habilitar variante dark con la clase .dark en Tailwind v4 -->
+    <style type="text/tailwindcss">
+        @custom-variant dark (&:where(.dark, .dark *));
+    </style>
+
     <link rel="icon" href="{{ asset('assets/images/logo.png') }}" type="image/png">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+    <!-- Inicialización del tema antes del renderizado -->
+    <script>
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
 </head>
-<body class="bg-slate-50 font-sans text-slate-800 antialiased selection:bg-[#841B44]/10">
+<body class="bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 text-sm md:text-base antialiased selection:bg-[#841B44]/20 transition-colors duration-200 min-h-screen flex flex-col">
     <div class="min-h-screen flex flex-col">
         
         <!-- HEADER / TOPBAR -->
-        <header class="bg-white border-b border-slate-200 shadow-2xs px-4 md:px-6 py-3 flex justify-between items-center sticky top-0 z-40">
-            <div class="flex items-center space-x-3">
-                <span class="material-icons-round text-3xl text-[#841B44]">hub</span>
+        <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xs px-5 md:px-8 py-4 flex justify-between items-center sticky top-0 z-40 transition-colors duration-200">
+            <div class="flex items-center space-x-3.5">
+                <span class="material-icons-round text-3xl md:text-4xl text-[#841B44] dark:text-rose-400">hub</span>
                 <div>
-                    <h1 class="text-base font-black tracking-wider leading-none text-[#841B44]">SUIE</h1>
-                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1 xs:block">Sistema Unificado de Integración Educativa</p>
+                    <h1 class="text-lg md:text-xl font-black tracking-wider leading-none text-[#841B44] dark:text-rose-400">SUIE</h1>
+                    <p class="text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-widest mt-1 xs:block">Sistema Unificado de Integración Educativa</p>
                 </div>
             </div>
             
-            <div class="flex items-center space-x-3 md:space-x-4">
+            <div class="flex items-center space-x-3 md:space-x-5">
+                <!-- BOTÓN TOGGLE MODO OSCURO -->
+                <button id="btn-theme-toggle" type="button" aria-label="Alternar tema"
+                        class="p-2.5 text-slate-500 dark:text-slate-300 hover:text-[#841B44] dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700/80 shadow-3xs">
+                    <span id="theme-icon-light" class="material-icons-round text-xl hidden dark:block text-amber-400">light_mode</span>
+                    <span id="theme-icon-dark" class="material-icons-round text-xl block dark:hidden text-slate-600">dark_mode</span>
+                </button>
+
                 @if(auth()->check())
-                    <!-- BADGE GRADO/GRUPO DINÁMICO (Inyección desde sub-vistas) -->
+                    <!-- BADGE GRADO/GRUPO DINÁMICO -->
                     @if(View::hasSection('grupo_badge'))
-                        <div class="hidden sm:inline-flex items-center px-3 py-1 bg-rose-50 border border-rose-100 text-[#841B44] text-[10px] font-bold rounded-full uppercase tracking-wider">
+                        <div class="hidden sm:inline-flex items-center px-4 py-1.5 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-[#841B44] dark:text-rose-300 text-xs font-bold rounded-full uppercase tracking-wider">
                             @yield('grupo_badge')
                         </div>
                     @endif
 
                     @php
-                        // Lógica de Descifrado Dinámico para la Identidad del Docente
+                        // Descifrado dinámico y seguro de la identidad
                         $docenteNombre = '';
                         $docenteApellido = '';
                         $inicialesAvatar = '';
@@ -40,7 +66,6 @@
                             $rawNombre = str_replace(' (Plain)', '', auth()->user()->docente->nombre ?? '');
                             $rawApellido = str_replace(' (Plain)', '', auth()->user()->docente->apellido_paterno ?? '');
 
-                            // Descifrado seguro del Nombre
                             try {
                                 if (is_string($rawNombre) && (str_starts_with($rawNombre, 'ey') || strlen($rawNombre) > 50)) {
                                     $docenteNombre = decrypt($rawNombre);
@@ -51,7 +76,6 @@
                                 $docenteNombre = $rawNombre;
                             }
 
-                            // Descifrado seguro del Apellido Paterno
                             try {
                                 if (is_string($rawApellido) && (str_starts_with($rawApellido, 'ey') || strlen($rawApellido) > 50)) {
                                     $docenteApellido = decrypt($rawApellido);
@@ -62,7 +86,6 @@
                                 $docenteApellido = $rawApellido;
                             }
 
-                            // Cálculo seguro de iniciales para el avatar
                             $iniN = !empty($docenteNombre) ? mb_substr($docenteNombre, 0, 1) : 'P';
                             $iniA = !empty($docenteApellido) ? mb_substr($docenteApellido, 0, 1) : 'R';
                             $inicialesAvatar = strtoupper($iniN . $iniA);
@@ -71,55 +94,55 @@
                         }
                     @endphp
 
-                    <div class="text-right hidden md:block">
+                    <div class="text-right hidden md:block border-l border-slate-200 dark:border-slate-800 pl-4">
                         @if(auth()->user()->docente)
-                            <p class="text-xs font-bold text-slate-900 truncate max-w-[200px]">
+                            <p class="text-sm font-bold text-slate-900 dark:text-slate-100 truncate max-w-[220px]">
                                 Prof. {{ $docenteNombre }} {{ $docenteApellido }}
                             </p>
                         @else
-                            <p class="text-xs font-bold text-slate-900 uppercase">
-                                {{ auth()->user()->rol ?? 'Estudiante' }}
+                            <p class="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase">
+                                {{ auth()->user()->rol ?? 'Usuario' }}
                             </p>
                         @endif
-                        <p class="text-[10px] text-[#841B44] font-semibold uppercase font-mono mt-0.5">
+                        <p class="text-xs text-[#841B44] dark:text-rose-400 font-bold uppercase font-mono mt-0.5">
                             ID: {{ auth()->user()->username }}
                         </p>
                     </div>
 
                     <!-- DROPDOWN DE PERFIL -->
                     <div class="relative">
-                        <button id="profileDropdownBtn" class="w-9 h-9 bg-rose-50 hover:bg-rose-100 text-[#841B44] rounded-xl flex items-center justify-center font-black border border-rose-200/60 text-xs uppercase cursor-pointer focus:outline-hidden transition-colors select-none">
+                        <button id="profileDropdownBtn" class="w-11 h-11 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/80 text-[#841B44] dark:text-rose-300 rounded-2xl flex items-center justify-center font-black border border-rose-200 dark:border-rose-900/60 text-sm uppercase cursor-pointer focus:outline-hidden transition-colors select-none shadow-3xs">
                             {{ $inicialesAvatar }}
                         </button>
 
                         <!-- MENÚ DESPLEGABLE -->
-                        <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-50 transform origin-top-right transition-all">
+                        <div id="profileDropdown" class="hidden absolute right-0 mt-3 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl py-2 z-50 transform origin-top-right transition-all">
                             
                             <!-- Información móvil condensada -->
-                            <div class="px-4 py-2.5 border-b border-slate-100 md:hidden bg-slate-50/50 rounded-t-xl">
-                                <p class="text-xs font-black text-slate-900 truncate">
+                            <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 md:hidden bg-slate-50/60 dark:bg-slate-800/40 rounded-t-2xl">
+                                <p class="text-sm font-black text-slate-900 dark:text-slate-100 truncate">
                                     @if(auth()->user()->docente)
                                         Prof. {{ $docenteNombre }} {{ $docenteApellido }}
                                     @else
-                                        {{ auth()->user()->rol ?? 'Estudiante' }}
+                                        {{ auth()->user()->rol ?? 'Usuario' }}
                                     @endif
                                 </p>
-                                <p class="text-[10px] font-mono text-slate-400 mt-0.5 truncate">
+                                <p class="text-xs font-mono text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                                     Matrícula: {{ auth()->user()->username }}
                                 </p>
                             </div>
 
                             <form action="{{ route('logout') }}" method="POST" id="logout-form">
                                 @csrf
-                                <button type="submit" class="w-full text-left flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer">
-                                    <span class="material-icons-round text-sm">logout</span> Cerrar Sesión
+                                <button type="submit" class="w-full text-left flex items-center gap-2.5 px-4 py-3 text-xs md:text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer">
+                                    <span class="material-icons-round text-lg">logout</span> Cerrar Sesión
                                 </button>
                             </form>
                         </div>
                     </div>
                 @else
                     <div class="text-right hidden md:block">
-                        <p class="text-xs font-bold text-slate-500">Usuario Invitado</p>
+                        <p class="text-xs font-bold text-slate-500 dark:text-slate-400">Usuario Invitado</p>
                     </div>
                 @endif
             </div>
@@ -131,9 +154,10 @@
         </main>
     </div>
 
-    <!-- MANEJO FLUIDO DEL DROPDOWN -->
+    <!-- SCRIPT DE DROPDOWN Y MODO OSCURO -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Manejo del Dropdown de Perfil
             const dropdownBtn = document.getElementById('profileDropdownBtn');
             const dropdownMenu = document.getElementById('profileDropdown');
 
@@ -147,6 +171,15 @@
                     if (!dropdownMenu.contains(event.target) && !dropdownBtn.contains(event.target)) {
                         dropdownMenu.classList.add('hidden');
                     }
+                });
+            }
+
+            // Alternancia de Modo Oscuro
+            const btnTheme = document.getElementById('btn-theme-toggle');
+            if (btnTheme) {
+                btnTheme.addEventListener('click', function () {
+                    const isDark = document.documentElement.classList.toggle('dark');
+                    localStorage.setItem('theme', isDark ? 'dark' : 'light');
                 });
             }
         });

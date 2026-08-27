@@ -1,5 +1,6 @@
 @extends('cpanel/plantillaestudiante')
 @section('title', 'Mis Materias')
+
 @section('grupo_badge')
     @if(isset($grupoInfo))
         {{ $grupoInfo->semestre }}° Semestre — Grupo "{{ $grupoInfo->grupo }}"
@@ -9,27 +10,28 @@
 @endsection
 
 @section('content')
-<main class="p-4 md:p-6 space-y-6 max-w-7xl w-full mx-auto text-xs">
+<main class="p-6 md:p-8 space-y-8 max-w-7xl w-full mx-auto text-sm md:text-base">
 
     <!-- ENCABEZADO DE LA CARGA ACADÉMICA -->
-    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-3xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-            <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-                <span class="material-icons-round text-[#841B44]">auto_stories</span> Mi Carga Académica
+    <div class="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6 transition-colors duration-200">
+        <div class="space-y-1">
+            <h2 class="text-xl md:text-2xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-3">
+                <span class="material-icons-round text-2xl md:text-3xl text-[#841B44] dark:text-rose-400">auto_stories</span> 
+                Mi Carga Académica
             </h2>
-            <p class="text-slate-500 text-[11px] mt-0.5">Consulta las asignaturas asignadas a tu grupo, horarios, aulas y tu porcentaje de asistencia actual.</p>
+            <p class="text-slate-500 dark:text-slate-400 text-xs md:text-sm">Consulta las asignaturas de tu grupo, horarios, aulas y tu porcentaje de asistencia en tiempo real.</p>
         </div>
         
         @if(isset($grupoInfo))
-            <div class="shrink-0 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-                <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Especialidad Técnica</span>
-                <span class="font-bold text-slate-700">{{ $grupoInfo->especialidad }} (Turno {{ $grupoInfo->turno }})</span>
+            <div class="shrink-0 bg-slate-50 dark:bg-slate-800/80 px-5 py-3 rounded-2xl border border-slate-200 dark:border-slate-700/80">
+                <span class="text-xs text-slate-400 dark:text-slate-400 block font-extrabold uppercase tracking-wider">Especialidad Técnica</span>
+                <span class="font-black text-slate-800 dark:text-slate-100 text-sm md:text-base">{{ $grupoInfo->especialidad }} (Turno {{ $grupoInfo->turno }})</span>
             </div>
         @endif
     </div>
 
-    <!-- TARJETAS/CONTENEDORES DE MATERIAS -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- TARJETAS DE MATERIAS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
         @forelse($materias as $materia)
             @php
                 // Descifrado dinámico y seguro de la identidad del docente
@@ -37,91 +39,89 @@
                 $docenteApellido = $materia->docente_apellido ?? '';
 
                 try {
-                    // Si el nombre viene encriptado en Base64
                     if (is_string($docenteNombre) && (str_starts_with($docenteNombre, 'ey') || strlen($docenteNombre) > 50)) {
                         $docenteNombre = decrypt($docenteNombre);
                     }
-                    // Si el apellido viene encriptado en Base64
                     if (is_string($docenteApellido) && (str_starts_with($docenteApellido, 'ey') || strlen($docenteApellido) > 50)) {
                         $docenteApellido = decrypt($docenteApellido);
                     }
                 } catch (\Throwable $e) {
-                    // Sanitización en caso de texto plano previamente formateado
                     $docenteNombre = str_replace(' (Plain)', '', $docenteNombre);
                     $docenteApellido = str_replace(' (Plain)', '', $docenteApellido);
                 }
             @endphp
 
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-3xs p-5 flex flex-col justify-between space-y-4 hover:border-slate-300 transition-all">
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 md:p-7 flex flex-col justify-between space-y-6 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all duration-200">
                 
                 <!-- Identificación de la Asignatura -->
-                <div class="flex justify-between items-start gap-3">
-                    <div class="space-y-1">
-                        <span class="font-mono font-bold text-[#841B44] bg-rose-50 px-2 py-0.5 rounded-sm uppercase text-[10px] tracking-wider">
+                <div class="flex justify-between items-start gap-4">
+                    <div class="space-y-1.5">
+                        <span class="font-mono font-black text-[#841B44] dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900/50 px-3 py-1 rounded-lg uppercase text-xs tracking-wider inline-block">
                             {{ $materia->clave }}
                         </span>
-                        <h3 class="text-sm font-black text-slate-900 leading-tight pt-1">
+                        <h3 class="text-base md:text-lg font-black text-slate-900 dark:text-slate-100 leading-snug pt-1">
                             {{ $materia->materia_nombre }}
                         </h3>
-                        <p class="text-slate-500 font-medium text-[11px] flex items-center gap-1 pt-0.5">
-                            <span class="material-icons-round text-sm text-slate-400">person</span>
+                        <p class="text-slate-600 dark:text-slate-300 font-medium text-xs md:text-sm flex items-center gap-1.5 pt-0.5">
+                            <span class="material-icons-round text-base text-slate-400 dark:text-slate-500">person</span>
                             Prof. {{ $docenteApellido }} {{ $docenteNombre }}
                         </p>
                     </div>
                     
                     <!-- Horas Semanales -->
                     <div class="text-right shrink-0">
-                        <span class="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-xl font-bold text-[10px]">
-                            {{ $materia->horas_semanales }} hrs/semana
+                        <span class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3.5 py-1.5 rounded-xl font-bold text-xs">
+                            {{ $materia->horas_semanales }} hrs/sem
                         </span>
                     </div>
                 </div>
 
                 <!-- Logística de Aula y Horarios -->
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60 grid grid-cols-2 gap-2 text-[11px]">
-                    <div class="space-y-0.5">
-                        <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Aula</span>
-                        <div class="flex items-center gap-1 text-slate-700 font-semibold">
-                            <span class="material-icons-round text-slate-400 text-xs">meeting_room</span>
+                <div class="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 grid grid-cols-2 gap-4 text-xs md:text-sm">
+                    <div class="space-y-1">
+                        <span class="text-[11px] text-slate-400 dark:text-slate-400 uppercase font-extrabold tracking-wider block">Aula Asignada</span>
+                        <div class="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-bold">
+                            <span class="material-icons-round text-slate-400 text-base">meeting_room</span>
                             {{ $materia->aula ?? 'Por asignar' }}
                         </div>
                     </div>
-                    <div class="space-y-0.5">
-                        <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Horario Asignado</span>
-                        <div class="flex items-center gap-1 text-slate-600 font-mono text-[10px] leading-tight truncate" title="{{ $materia->horario }}">
-                            <span class="material-icons-round text-slate-400 text-xs">schedule</span>
+                    <div class="space-y-1">
+                        <span class="text-[11px] text-slate-400 dark:text-slate-400 uppercase font-extrabold tracking-wider block">Horario Semanal</span>
+                        <div class="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-mono text-xs leading-tight truncate" title="{{ $materia->horario }}">
+                            <span class="material-icons-round text-slate-400 text-base">schedule</span>
                             {{ $materia->horario ?? 'No definido' }}
                         </div>
                     </div>
                 </div>
 
                 <!-- Barra de Seguimiento de Asistencias -->
-                <div class="pt-1 space-y-1.5">
-                    <div class="flex justify-between items-center text-[10px] font-bold">
-                        <span class="text-slate-400 uppercase tracking-wider">Rendimiento de Asistencias</span>
-                        <span class="{{ $materia->porcentaje_asistencia >= 80 ? 'text-emerald-600' : 'text-rose-600' }} font-mono">
+                <div class="pt-2 space-y-2.5">
+                    <div class="flex justify-between items-center text-xs md:text-sm font-black">
+                        <span class="text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[11px]">Porcentaje de Asistencias</span>
+                        <span class="{{ $materia->porcentaje_asistencia >= 80 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400' }} font-mono text-sm md:text-base">
                             {{ $materia->porcentaje_asistencia }}% Asistencia
                         </span>
                     </div>
                     
                     <!-- Barra de progreso visual -->
-                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200/60">
+                    <div class="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700">
                         <div class="h-full rounded-full transition-all duration-500 {{ $materia->porcentaje_asistencia >= 80 ? 'bg-emerald-500' : 'bg-rose-500' }}" 
                              style="width: {{ $materia->porcentaje_asistencia }}%">
                         </div>
                     </div>
                     
-                    <div class="flex justify-between text-[9px] text-slate-400 font-medium">
-                        <span>Faltas acumuladas: {{ $materia->total_faltas }}</span>
-                        <span>Mínimo requerido: 80%</span>
+                    <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400 font-medium pt-0.5">
+                        <span>Inasistencias acumuladas: <strong class="text-slate-700 dark:text-slate-200">{{ $materia->total_faltas }}</strong></span>
+                        <span>Mínimo institucional: <strong>80%</strong></span>
                     </div>
                 </div>
 
             </div>
         @empty
-            <div class="col-span-full bg-white p-8 rounded-2xl border border-slate-200 text-center text-slate-400 font-medium">
-                <span class="material-icons-round text-3xl block mb-2 text-slate-300">auto_stories</span>
-                Aún no tienes materias vinculadas. Esto puede deberse a que no tienes un grupo asignado para el ciclo escolar vigente.
+            <div class="col-span-full bg-white dark:bg-slate-900 p-12 rounded-3xl border border-slate-200 dark:border-slate-800 text-center text-slate-400 dark:text-slate-500 font-medium space-y-3">
+                <span class="material-icons-round text-5xl block text-slate-300 dark:text-slate-700">auto_stories</span>
+                <p class="text-base">Aún no tienes asignaturas registradas para este ciclo escolar.</p>
+                <p class="text-xs text-slate-400">Esto suele suceder cuando tu matrícula aún no ha sido asignada a un grupo activo.</p>
             </div>
         @endforelse
 

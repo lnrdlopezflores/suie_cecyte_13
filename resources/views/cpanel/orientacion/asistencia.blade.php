@@ -1,60 +1,69 @@
 @extends('cpanel/plantilladocente')
 @section('title', 'Registro de Asistencia')
+
 @section('content')
 <form action="{{ route('asistencia.guardar', $carga->id) }}" method="POST">
     @csrf
-    <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
+    <main class="flex-1 max-w-6xl w-full mx-auto p-6 md:p-8 space-y-8 text-sm md:text-base">
         
-        <div class="bg-white p-4 rounded-xl shadow-xs border border-slate-200 flex flex-wrap items-center justify-between gap-4">
-            <div class="flex flex-wrap items-center gap-4 text-xs">
+        <!-- PANEL DE CONTROL SUPERIOR -->
+        <div class="bg-white dark:bg-slate-900 p-6 md:p-7 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-6 transition-colors duration-200">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 flex-1 text-xs md:text-sm">
+                
+                <!-- Materia y Grupo -->
                 <div>
-                    <label class="block font-bold text-slate-500 uppercase mb-1">Materia / Grupo</label>
-                    <div class="bg-slate-100 border border-slate-300 rounded-lg p-2 font-semibold text-slate-700">
-                        {{ $carga->nombre }} - Semestre {{ $carga->semestre }}°{{ $carga->grupo }}
+                    <label class="block font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider text-[11px] mb-2">Materia / Grupo</label>
+                    <div class="bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-2xl p-3.5 font-bold text-slate-800 dark:text-slate-100 truncate shadow-3xs">
+                        {{ $carga->nombre }} • {{ $carga->semestre }}°"{{ $carga->grupo }}"
                     </div>
                 </div>
+
+                <!-- Periodo Evaluatorio -->
                 <div>
-                    <label class="block font-bold text-slate-500 uppercase mb-1">Periodo Evaluatorio</label>
-                    <select name="periodo" class="bg-slate-50 border border-slate-300 rounded-lg p-2 font-medium focus:ring-1 focus:ring-indigo-600 focus:outline-hidden">
+                    <label class="block font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider text-[11px] mb-2">Periodo Evaluatorio</label>
+                    <select name="periodo" class="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-2xl p-3.5 font-semibold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-600 focus:outline-hidden transition-all">
                         <option value="Parcial 1">Parcial 1</option>
                         <option value="Parcial 2">Parcial 2</option>    
                         <option value="Parcial 3">Parcial 3 / Final</option>
                     </select>
                 </div>
+
+                <!-- Fecha de Registro -->
                 <div>
-                    <label class="block font-bold text-slate-500 uppercase mb-1">Fecha de Registro</label>
-                    <input type="date" name="fecha" value="{{ date('Y-m-d') }}" class="bg-slate-50 border border-slate-300 rounded-lg p-1.5 font-medium focus:ring-1 focus:ring-indigo-600 focus:outline-hidden">
+                    <label class="block font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider text-[11px] mb-2">Fecha de Registro</label>
+                    <input type="date" name="fecha" value="{{ date('Y-m-d') }}" class="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-2xl p-3.5 font-semibold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-600 focus:outline-hidden transition-all">
                 </div>
             </div>
 
-            <div class="flex gap-2">
-                <a href="{{ url('docente/index') }}" class="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-200 transition-colors flex items-center">
-                    Volver al Panel
+            <!-- BOTONES DE ACCIÓN -->
+            <div class="flex items-center gap-3 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800">
+                <a href="{{ url('docente/index') }}" class="px-5 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5 text-xs md:text-sm">
+                    <span class="material-icons-round text-base">arrow_back</span> Volver
                 </a>
-                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors shadow-2xs flex items-center cursor-pointer">
-                    <span class="material-icons-round text-sm mr-1">save</span> Guardar Asistencia
+                <button type="submit" class="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-2xl transition-all shadow-md flex items-center gap-2 cursor-pointer text-xs md:text-sm">
+                    <span class="material-icons-round text-lg">save</span> Guardar Asistencia
                 </button>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+        <!-- TABLA DE LISTA DE ASISTENCIA -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors duration-200">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-400 text-[11px] font-bold uppercase tracking-wider">
-                            <th class="p-4 w-16">No.</th>
-                            <th class="p-4">Alumno (Matrícula)</th>
-                            <th class="p-4 text-center w-40">Asistencia (Hoy)</th>
-                            <th class="p-4 text-center w-40">Clases Totales</th>
-                            <th class="p-4 text-center w-40">Faltas Acumuladas</th>
-                            <th class="p-4 text-center w-48 bg-indigo-50/50 text-indigo-900">Porcentaje de Asistencia</th>
+                        <tr class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700/80 text-slate-400 dark:text-slate-400 text-xs font-black uppercase tracking-wider">
+                            <th class="p-4 md:p-5 w-16 text-center">No.</th>
+                            <th class="p-4 md:p-5">Alumno (Expediente)</th>
+                            <th class="p-4 md:p-5 text-center w-44">Asistencia (Hoy)</th>
+                            <th class="p-4 md:p-5 text-center w-36">Sesiones</th>
+                            <th class="p-4 md:p-5 text-center w-36">Faltas</th>
+                            <th class="p-4 md:p-5 text-center w-52 bg-indigo-50/60 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-200">Porcentaje Global</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-200 text-xs">
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-xs md:text-sm">
                         
                         @forelse($alumnos as $index => $alumno)
                             @php
-                                // Descifrado dinámico y seguro de la identidad del estudiante
                                 $nombre = $alumno->nombre;
                                 $paterno = $alumno->apellido_paterno;
                                 $materno = $alumno->apellido_materno;
@@ -70,53 +79,60 @@
                                         $materno = decrypt($materno);
                                     }
                                 } catch (\Throwable $e) {
-                                    // Mantiene los valores de respaldo si el dato está en texto plano
                                     $nombre = str_replace(' (Plain)', '', $nombre);
                                     $paterno = str_replace(' (Plain)', '', $paterno);
                                     $materno = str_replace(' (Plain)', '', $materno);
                                 }
 
-                                // Cálculo dinámico en tiempo real del porcentaje
                                 $porcentaje = $alumno->clases_totales > 0 
                                     ? round((($alumno->clases_totales - $alumno->faltas_acumuladas) / $alumno->clases_totales) * 100, 1) 
                                     : 100;
                             @endphp
                             
-                            <tr class="hover:bg-slate-50/50 transition-colors {{ $porcentaje < 80 ? 'bg-red-50/20' : '' }}">
-                                <td class="p-4 font-mono text-slate-400">{{ \Illuminate\Support\Str::padLeft($index + 1, 2, '0') }}</td>
-                                <td class="p-4">
-                                    <div class="font-bold text-slate-900">
+                            <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors {{ $porcentaje < 80 ? 'bg-red-50/30 dark:bg-rose-950/20' : '' }}">
+                                <td class="p-4 md:p-5 font-mono text-slate-400 dark:text-slate-500 text-center font-bold">
+                                    {{ \Illuminate\Support\Str::padLeft($index + 1, 2, '0') }}
+                                </td>
+                                
+                                <td class="p-4 md:p-5">
+                                    <div class="font-extrabold text-slate-900 dark:text-slate-100 text-sm md:text-base">
                                         {{ $paterno }} {{ $materno }} {{ $nombre }}
                                     </div>
-                                    <div class="text-[10px] text-slate-400 font-mono mt-0.5">{{ $alumno->username }}</div>
+                                    <div class="text-xs text-slate-400 dark:text-slate-500 font-mono mt-0.5">Matrícula: {{ $alumno->username }}</div>
                                 </td>
-                                <td class="p-4 text-center">
-                                    <input type="checkbox" 
-                                           name="asistencias[{{ $alumno->alumno_id }}]" 
-                                           value="Asistencia" 
-                                           checked 
-                                           class="w-4 h-4 text-indigo-600 border-slate-300 rounded-sm focus:ring-indigo-500 cursor-pointer">
+                                
+                                <td class="p-4 md:p-5 text-center">
+                                    <label class="inline-flex items-center justify-center p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors">
+                                        <input type="checkbox" 
+                                               name="asistencias[{{ $alumno->alumno_id }}]" 
+                                               value="Asistencia" 
+                                               checked 
+                                               class="w-5 h-5 text-indigo-600 dark:text-indigo-500 border-slate-300 dark:border-slate-700 rounded-lg focus:ring-indigo-500 dark:bg-slate-800 cursor-pointer">
+                                    </label>
                                 </td>
-                                <td class="p-4 text-center font-medium text-slate-600">{{ $alumno->clases_totales }}</td>
-                                <td class="p-4 text-center font-bold {{ $alumno->faltas_acumuladas > 4 ? 'text-red-600' : 'text-slate-600' }}">
+                                
+                                <td class="p-4 md:p-5 text-center font-bold text-slate-700 dark:text-slate-300">{{ $alumno->clases_totales }}</td>
+                                
+                                <td class="p-4 md:p-5 text-center font-black {{ $alumno->faltas_acumuladas > 4 ? 'text-red-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300' }}">
                                     {{ $alumno->faltas_acumuladas }}
                                 </td>
                                 
                                 @if($porcentaje < 80)
-                                    <td class="p-4 text-center font-bold text-white bg-red-600">
-                                        <div class="flex items-center justify-center gap-1">
-                                            <span class="material-icons-round text-sm">error</span> {{ $porcentaje }}%
+                                    <td class="p-4 md:p-5 text-center font-black text-white bg-red-600 dark:bg-rose-700">
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <span class="material-icons-round text-base">error</span> {{ $porcentaje }}%
                                         </div>
                                     </td>
                                 @else
-                                    <td class="p-4 text-center font-bold text-emerald-600 bg-indigo-50/10">
+                                    <td class="p-4 md:p-5 text-center font-black text-emerald-600 dark:text-emerald-400 bg-indigo-50/20 dark:bg-indigo-950/20">
                                         {{ $porcentaje }}%
                                     </td>
                                 @endif
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="p-8 text-center text-sm font-medium text-slate-500">
+                                <td colspan="6" class="p-12 text-center text-base font-medium text-slate-400 dark:text-slate-500">
+                                    <span class="material-icons-round text-4xl block mb-2 text-slate-300 dark:text-slate-700">group_off</span>
                                     No hay alumnos inscritos en este grupo.
                                 </td>
                             </tr>
@@ -127,9 +143,10 @@
             </div>
         </div>
 
-        <div class="flex items-start space-x-2 bg-blue-50 border border-blue-200 p-3 rounded-xl text-[11px] text-blue-800 leading-relaxed">
-            <span class="material-icons-round text-sm mt-0.5">info</span>
-            <p><strong>Reglamento Institucional:</strong> Los alumnos marcados con un porcentaje inferior al 80% pierden de forma automática el derecho a la evaluación ordinaria del parcial. Los casos críticos son notificados a Orientación Educativa.</p>
+        <!-- AVISO DE REGLAMENTO -->
+        <div class="flex items-start gap-3 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900/60 p-5 rounded-2xl text-xs md:text-sm text-blue-900 dark:text-blue-200 leading-relaxed shadow-3xs">
+            <span class="material-icons-round text-xl text-blue-600 dark:text-blue-400 shrink-0 mt-0.5">info</span>
+            <p><strong>Reglamento Institucional:</strong> Los estudiantes marcados con un porcentaje de asistencia inferior al <strong>80%</strong> pierden automáticamente el derecho a la evaluación ordinaria del parcial. El sistema emite alertas automáticas al departamento de Orientación Educativa.</p>
         </div>
 
     </main>

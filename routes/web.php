@@ -17,6 +17,8 @@ use App\Http\Controllers\AlumnoPagosController;
 use App\Http\Controllers\ValidarPagoController;
 use App\Http\Controllers\titulacionController;
 use App\Http\Controllers\DocenteTitulacionController;
+use App\Http\Controllers\CoodinacionCargaController;
+use App\Http\Controllers\CoodinacionProyectoController;
 
 
 Route::get('/', function () {
@@ -66,6 +68,9 @@ Route::middleware(['auth', 'rol:Docente'])->group(function () {
     Route::post('/titulacion/evaluar', [DocenteTitulacionController::class, 'evaluar'])->name('docente.titulacion.evaluar');
     Route::post('/titulacion/votar-jurado', [DocenteTitulacionController::class, 'votarJurado'])->name('docente.titulacion.votar-jurado');
 });
+
+Route::resource('/coordinador/cargas', CoodinacionCargaController::class)->names('coordinador.cargas');
+Route::resource('/coordinador/proyectos', CoodinacionProyectoController::class)->names('coordinador.proyectos');
 
 
 Route::resource('/finanzas/pagos', ValidarPagoController::class)->names('contador.pagos');
