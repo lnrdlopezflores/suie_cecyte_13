@@ -26,6 +26,52 @@
             document.documentElement.classList.remove('dark');
         }
     </script>
+    <!-- Inyección Dinámica y Sobrescritura Global de Colores SUIE -->
+<style>
+    :root {
+        --color-primary: {{ $colorPrimario ?? '#841B44' }};
+        --color-primary-hover: {{ $colorHover ?? '#681535' }};
+        --color-primary-light: {{ $colorLight ?? '#fdf2f4' }};
+    }
+
+    /* 1. Clases utilitarias directas */
+    .bg-custom-primary { background-color: var(--color-primary) !important; }
+    .text-custom-primary { color: var(--color-primary) !important; }
+    .border-custom-primary { border-color: var(--color-primary) !important; }
+    .hover\:bg-custom-primary-hover:hover { background-color: var(--color-primary-hover) !important; }
+
+    /* 2. Sobrescritura mágica para selectores de Tailwind fijos existentes */
+    [class*="bg-[#841B44]"],
+    [class*="bg-\[\#841B44\]"] {
+        background-color: var(--color-primary) !important;
+    }
+
+    [class*="text-[#841B44]"],
+    [class*="text-\[\#841B44\]"] {
+        color: var(--color-primary) !important;
+    }
+
+    [class*="border-[#841B44]"],
+    [class*="border-\[\#841B44\]"] {
+        border-color: var(--color-primary) !important;
+    }
+
+    [class*="hover:bg-[#681535]"]:hover,
+    [class*="hover:bg-[#6b1536]"]:hover,
+    [class*="hover:bg-\[\#681535\]"]:hover,
+    [class*="hover:bg-\[\#6b1536\]"]:hover {
+        background-color: var(--color-primary-hover) !important;
+    }
+
+    [class*="hover:text-[#841B44]"]:hover,
+    [class*="hover:text-\[\#841B44\]"]:hover {
+        color: var(--color-primary) !important;
+    }
+
+    [class*="bg-rose-50"] {
+        background-color: var(--color-primary-light) !important;
+    }
+</style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 text-sm h-screen flex flex-col overflow-hidden transition-colors duration-200">
 
@@ -83,7 +129,8 @@
                 <div>
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 block mb-2.5">General</span>
                     <nav class="space-y-1.5">
-                        <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-colors {{ request()->routeIs('coordinador.dashboard') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100' }}">
+                        <a href="#" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-colors {{ request()->routeIs('coordinador.dashboard') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100' }}">
                             <span class="material-icons-round text-base">dashboard</span> Panel Principal
                         </a>
                     </nav>
@@ -93,22 +140,24 @@
                 <div>
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 block mb-2.5">Gestión Docente</span>
                     <nav class="space-y-1.5">
-                        <a href="{{ route('coordinador.cargas.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-colors {{ request()->routeIs('coordinador.cargas.*') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100' }}">
+                        <a href="{{ route('coordinador.cargas.index') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-colors {{ request()->routeIs('coordinador.cargas.*') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100' }}">
                             <span class="material-icons-round text-base">menu_book</span> Cargas Académicas
                         </a>
-                        <a href="{{ route('coordinador.proyectos.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-colors {{ request()->routeIs('coordinador.proyectos.*') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100' }}">
+                        <a href="{{ route('coordinador.proyectos.index') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-colors {{ request()->routeIs('coordinador.proyectos.*') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100' }}">
                             <span class="material-icons-round text-base">folder_special</span> Proyectos Registrados
                         </a>
                     </nav>
                 </div>
 
-                <!-- ASIGNACIÓN DE JURADOS (3 SINODOS POR CARRERA) -->
+                <!-- ASIGNACIÓN DE JURADOS (3 SÍNODOS POR CARRERA) -->
                 <div>
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 block mb-2.5">Asignación de Jurados</span>
                     <nav class="space-y-1.5">
                         <!-- Animación Digital -->
-                        <a href="#" 
-                           class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-colors {{ request()->fullUrlIs('*carrera=animacion_digital*') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100' }}">
+                        <a href="{{ route('coordinador.jurados.carrera', ['carrera' => 'animacion_digital']) }}" 
+                           class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-colors {{ request()->routeIs('coordinador.jurados.*') && request()->route('carrera') === 'animacion_digital' ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100' }}">
                             <div class="flex items-center gap-3">
                                 <span class="material-icons-round text-base text-indigo-400">animation</span>
                                 <span>Animación Digital</span>
@@ -117,8 +166,8 @@
                         </a>
 
                         <!-- Química Industrial -->
-                        <a href="#" 
-                           class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-colors {{ request()->fullUrlIs('*carrera=quimica_industrial*') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100' }}">
+                        <a href="{{ route('coordinador.jurados.carrera', ['carrera' => 'quimica_industrial']) }}" 
+                           class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-colors {{ request()->routeIs('coordinador.jurados.*') && request()->route('carrera') === 'quimica_industrial' ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100' }}">
                             <div class="flex items-center gap-3">
                                 <span class="material-icons-round text-base text-emerald-400">science</span>
                                 <span>Química Industrial</span>
@@ -151,7 +200,6 @@
     <!-- SCRIPTS -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Sidebar móvil
             const btnToggle = document.getElementById('btn-toggle-sidebar');
             const sidebar = document.getElementById('sidebar-menu');
             const overlay = document.getElementById('sidebar-overlay');
@@ -167,7 +215,6 @@
                 overlay.addEventListener('click', toggleSidebar);
             }
 
-            // Alternancia Modo Oscuro
             const btnTheme = document.getElementById('btn-theme-toggle');
             if (btnTheme) {
                 btnTheme.addEventListener('click', function () {
