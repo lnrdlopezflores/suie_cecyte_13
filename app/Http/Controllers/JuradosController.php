@@ -124,4 +124,66 @@ class JuradosController extends Controller
             return str_replace(' (Plain)', '', $valor);
         }
     }
+
+    /**
+     * Asigna los mismos 3 jurados a TODOS los proyectos de la carrera seleccionada.
+     */
+    public function guardarTodos(Request $request)
+    {
+        $request->validate([
+            'carrera'       => ['required', 'string'],
+            'presidente_id' => ['required', 'integer', 'exists:docentes,id'],
+            'secretario_id' => ['required', 'integer', 'exists:docentes,id'],
+            'vocal_id'      => ['required', 'integer', 'exists:docentes,id'],
+        ]);
+
+        $pId = $request->input('presidente_id');
+        $sId = $request->input('secretario_id');
+        $vId = $request->input('vocal_id');
+
+        // Validar que no se repitan los docentes
+        if ($pId === $sId || $pId === $vId || $sId === $vId) {
+            return redirect()->back()->with('error', 'Error: Los 3 cargos del sínodo deben ser asignados a profesores diferentes.');
+        }
+
+        $carrera = $request->input('carrera');
+        $nombreEspecialidad = ($carrera === 'quimica_industrial') 
+            ? 'Química Industrial' 
+            : 'Animación Digital';
+
+        // Obtener todos los IDs de los proyectos de la carrera
+        $proyectoIds = DB::table('proyectos_titulacion')
+            ->join('proyecto_alumno', 'proyectos_titulacion.id', '=', 'proyecto_alumno.proyecto_id')
+            ->join('alumnos', 'proyecto_alumno.alumno_id', '=', 'alumnos.id')
+            ->join('grupos', 'alumnos.grupo_id', '=', 'grupos.id')
+            ->where('grupos.especialidad', $nombreEspecialidad)
+            ->pluck('proyectos_titulacion.id')
+            ->unique();
+
+        if ($proyectoIds->isEmpty()) {
+            return redirect()->back()->with('error', 'No hay proyectos registrados para asignar jurados.');
+        }
+
+        DB::transaction(function () use ($proyectoIds, $pId, $sId, $vId) {
+            $cargos = [
+                ['cargo' => 'Presidente', 'docente_id' => $pId],
+                ['cargo' => 'Secretario', 'docente_id' => $sId],
+                ['cargo' => 'Vocal',      'docente_id' => $vId],
+            ];
+
+            foreach ($proyectoIds as $proyectoId) {
+                foreach ($cargos as $c) {
+                    DB::table('proyecto_jurados')->updateOrInsert(
+                        ['proyecto_id' => $proyectoId, 'cargo' => $c['cargo']],
+                        [
+                            'docente_id' => $c['docente_id'],
+                            'updated_at' => now(),
+                        ]
+                    );
+                }
+            }
+        });
+
+        return redirect()->back()->with('success', "Se asignó exitosamente el tribunal (3 jurados) a los {$proyectoIds->count()} proyectos de {$nombreEspecialidad}.");
+    }
 }

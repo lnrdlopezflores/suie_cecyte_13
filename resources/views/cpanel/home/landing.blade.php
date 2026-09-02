@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SUIE - CECyTE 13 Tepetitla</title>
     
+    <!-- Tailwind CSS v4 Browser -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     
     <link rel="icon" href="{{ asset('assets/images/logo.png') }}" type="image/png">
@@ -19,9 +20,9 @@
 
     <style>
         :root {
-            --color-primary: {{ $colorPrimario ?? '#841B44' }};
-            --color-primary-hover: {{ $colorHover ?? '#681535' }};
-            --color-primary-light: {{ $colorLight ?? '#fdf2f4' }};
+            --color-primary: {{ $colorPrimario ?? '#475569' }};
+            --color-primary-hover: {{ $colorHover ?? '#334155' }};
+            --color-primary-light: {{ $colorLight ?? '#f1f5f9' }};
             font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
@@ -33,7 +34,7 @@
         .bg-custom-light { background-color: var(--color-primary-light) !important; }
         .focus\:ring-custom-primary:focus { --tw-ring-color: var(--color-primary) !important; }
 
-        /* Sobrescritura forzada de clases estáticas heredadas */
+        /* Sobrescritura forzada de clases heredadas */
         [class*="bg-[#841B44]"],
         [class*="bg-\[\#841B44\]"] {
             background-color: var(--color-primary) !important;
@@ -67,20 +68,70 @@
             background-color: var(--color-primary-light) !important;
         }
 
-        /* Fondos decorativos sutiles */
         .bg-grid-pattern {
             background-size: 32px 32px;
             background-image: 
                 linear-gradient(to right, rgba(226, 232, 240, 0.4) 1px, transparent 1px),
                 linear-gradient(to bottom, rgba(226, 232, 240, 0.4) 1px, transparent 1px);
         }
+
+        /* ============================================================
+           MODO NEUTRAL ESTRICTO (VEDA ELECTORAL / TONO NEUTRO)
+           ============================================================ */
+        @if(!empty($mostrarAvisoVeda))
+            /* 1. Desaturación total de imágenes y logotipos */
+            img, picture, svg, .carousel-item img {
+                filter: grayscale(100%) contrast(92%) !important;
+                transition: filter 0.3s ease;
+            }
+
+            /* 2. Neutralización de luces y gradientes de color */
+            .ambient-glow {
+                display: none !important;
+            }
+
+            /* 3. Neutralización de tarjetas, cajas y badges multicolor */
+            .bg-blue-50, .bg-purple-50, .bg-emerald-50, .bg-indigo-50, .bg-amber-50 {
+                background-color: #f1f5f9 !important; /* slate-100 */
+            }
+
+            .text-blue-700, .text-purple-700, .text-emerald-700, .text-indigo-700, .text-amber-600, .text-emerald-600 {
+                color: #475569 !important; /* slate-600 */
+            }
+
+            .border-blue-100, .border-purple-100, .border-emerald-100, .border-indigo-100, .border-amber-100,
+            .hover\:border-indigo-300:hover, .hover\:border-indigo-400:hover, .hover\:border-rose-300:hover {
+                border-color: #cbd5e1 !important; /* slate-300 */
+            }
+
+            .group-hover\:bg-indigo-700:hover, .group:hover .group-hover\:bg-indigo-700 {
+                background-color: #475569 !important;
+                color: #ffffff !important;
+            }
+
+            /* 4. Neutralización de badges de especialidad */
+            .text-indigo-600, .text-emerald-600 {
+                color: #64748b !important; /* slate-500 */
+            }
+
+            /* 5. Asegurar contraste del contador estadístico */
+            .counter-stat {
+                color: #e2e8f0 !important; /* slate-200 */
+            }
+        @else
+            .counter-stat {
+                color: var(--color-primary-light) !important;
+            }
+        @endif
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 text-sm sm:text-base flex flex-col min-h-screen overflow-x-hidden selection:bg-custom-primary selection:text-white antialiased">
 
+    <!-- HEADER FLOTANTE -->
     <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 transition-all">
         <div class="max-w-7xl w-full mx-auto px-5 sm:px-8 py-3.5 flex justify-between items-center">
             
+            <!-- Logotipo y Nombre -->
             <a href="#" class="flex items-center space-x-4 group">
                 <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center p-1.5 border border-slate-200/80 shadow-xs group-hover:scale-105 transition-transform">
                     <img src="{{ asset('assets/images/logo.png') }}" alt="Logo Institución" class="w-full h-full object-contain">
@@ -91,6 +142,7 @@
                 </div>
             </a>
 
+            <!-- Navegación -->
             <div class="flex items-center space-x-2 sm:space-x-6">
                 <nav class="hidden md:flex items-center space-x-1 font-semibold text-xs sm:text-sm text-slate-600">
                     <a href="#oferta" class="px-3.5 py-2 rounded-xl hover:text-custom-primary hover:bg-slate-100/60 transition-all">Especialidades</a>
@@ -113,12 +165,26 @@
         </div>
     </header>
 
+    <!-- BANNER PERMANENTE DE VEDA ELECTORAL (CUANDO ESTÁ ACTIVO) -->
+    @if(!empty($mostrarAvisoVeda))
+        <aside class="bg-slate-800 text-slate-200 border-b border-slate-700 py-2.5 px-4 text-xs">
+            <div class="max-w-7xl mx-auto flex items-center justify-center gap-2 text-center">
+                <span class="material-icons-round text-base text-slate-300">gavel</span>
+                <p>
+                    <strong>Aviso Importante:</strong> Para cumplir con la normativa de la ley estatal y federal en materia electoral, este sistema modificará sus contenidos temporalmente.
+                </p>
+            </div>
+        </aside>
+    @endif
+
+    <!-- HERO SECTION -->
     <section class="relative bg-white border-b border-slate-200 overflow-hidden py-16 sm:py-24 bg-grid-pattern">
-        <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-custom-primary opacity-5 blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-indigo-500 opacity-5 blur-3xl pointer-events-none"></div>
+        <div class="ambient-glow absolute -top-32 -left-32 w-96 h-96 rounded-full bg-custom-primary opacity-5 blur-3xl pointer-events-none"></div>
+        <div class="ambient-glow absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-slate-500 opacity-5 blur-3xl pointer-events-none"></div>
 
         <div class="max-w-7xl w-full mx-auto px-5 sm:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-center relative z-10">
             
+            <!-- Texto Principal -->
             <div class="lg:col-span-6 space-y-6 sm:space-y-8 text-center lg:text-left">
                 <span class="inline-flex items-center gap-2 px-4 py-1.5 bg-custom-light border border-custom-primary/30 text-custom-primary text-xs sm:text-sm font-bold rounded-full shadow-2xs">
                     <span class="material-icons-round text-sm">school</span>
@@ -126,11 +192,11 @@
                 </span>
                 
                 <h2 class="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight sm:leading-none">
-                    Construyendo el futuro de nuestra <span class="text-custom-primary underline decoration-custom-primary/30 decoration-wavy decoration-2">juventud</span>.
+                    Construyendo el futuro de nuestra <span class="text-custom-primary">juventud</span>.
                 </h2>
                 
                 <p class="text-slate-600 text-sm sm:text-base lg:text-lg max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
-                    Bienvenidos al portal oficial del <strong class="text-slate-800">SUIE</strong> para el plantel CECyTE 13. Una plataforma integral para la gestión académica, seguimiento escolar y acreditación técnica profesional.
+                    Bienvenidos al portal oficial del <strong class="text-slate-800">SUIE</strong> para el plantel CECyTE 13. Una plataforma unificada para la gestión académica, seguimiento escolar y acreditación técnica profesional.
                 </p>
                 
                 <div class="pt-2 flex flex-wrap justify-center lg:justify-start gap-3 sm:gap-4">
@@ -145,35 +211,35 @@
                             <span class="material-icons-round text-base">login</span>
                         </button>
                     @endif
-                    <a href="#oferta" class="px-7 py-3.5 border border-slate-300 bg-white/80 backdrop-blur-xs text-slate-700 font-bold text-xs sm:text-sm rounded-2xl hover:bg-slate-50 transition-all flex items-center justify-center">
+                    <a href="#oferta" class="px-7 py-3.5 border border-slate-300 bg-white/80 backdrop-blur-xs text-slate-700 font-bold text-xs sm:text-sm rounded-2xl hover:bg-slate-100 transition-all flex items-center justify-center">
                         Conoce la Oferta
                     </a>
                 </div>
             </div>
 
+            <!-- Carrusel Visual -->
             <div class="lg:col-span-6 w-full max-w-xl mx-auto">
                 <div class="relative bg-slate-900 border border-slate-200/80 rounded-3xl overflow-hidden shadow-2xl aspect-4/3 w-full group">
-                    
                     <div id="carousel-slides" class="w-full h-full relative">
                         <div class="carousel-item absolute inset-0 opacity-100 transition-opacity duration-700 ease-in-out">
                             <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800" alt="Instalaciones Plantel" class="w-full h-full object-cover">
                             <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent p-6 sm:p-8 flex flex-col justify-end">
-                                <span class="text-[11px] text-custom-light font-extrabold uppercase tracking-wider">Infraestructura de Vanguardia</span>
+                                <span class="text-[11px] text-slate-300 font-extrabold uppercase tracking-wider">Infraestructura de Vanguardia</span>
                                 <h4 class="text-white text-base sm:text-lg font-bold mt-1 leading-snug">Laboratorios equipados y aulas preparadas para el desarrollo tecnológico.</h4>
                             </div>
                         </div>
                         <div class="carousel-item absolute inset-0 opacity-0 transition-opacity duration-700 ease-in-out">
                             <img src="https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?q=80&w=800" alt="Estudiantes en Biblioteca" class="w-full h-full object-cover">
                             <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent p-6 sm:p-8 flex flex-col justify-end">
-                                <span class="text-[11px] text-custom-light font-extrabold uppercase tracking-wider">Formación Dual y Tecnológica</span>
+                                <span class="text-[11px] text-slate-300 font-extrabold uppercase tracking-wider">Formación Dual y Tecnológica</span>
                                 <h4 class="text-white text-base sm:text-lg font-bold mt-1 leading-snug">Bachillerato Tecnológico con título y cédula profesional oficial.</h4>
                             </div>
                         </div>
                         <div class="carousel-item absolute inset-0 opacity-0 transition-opacity duration-700 ease-in-out">
                             <img src="https://images.unsplash.com/photo-1544535830-9dff9e0d4bec?q=80&w=800" alt="Cuerpo Docente" class="w-full h-full object-cover">
                             <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent p-6 sm:p-8 flex flex-col justify-end">
-                                <span class="text-[11px] text-custom-light font-extrabold uppercase tracking-wider">Docentes Calificados</span>
-                                <h4 class="text-white text-base sm:text-lg font-bold mt-1 leading-snug">Cuerpo colegiado comprometido con el acompañamiento académico integral.</h4>
+                                <span class="text-[11px] text-slate-300 font-extrabold uppercase tracking-wider">Docentes Calificados</span>
+                                <h4 class="text-white text-base sm:text-lg font-bold mt-1 leading-snug">Cuerpo colegiado comprometido con el acompañamiento integral.</h4>
                             </div>
                         </div>
                     </div>
@@ -196,27 +262,29 @@
         </div>
     </section>
 
+    <!-- ESTADÍSTICAS -->
     <section id="stats-section" class="bg-slate-900 text-white py-12 sm:py-16 px-5 sm:px-8 border-y border-slate-800">
         <div class="max-w-7xl w-full mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-y md:divide-y-0 md:divide-x divide-slate-800/80">
             <div class="pt-4 md:pt-0 space-y-1">
-                <p class="text-3xl sm:text-5xl font-black text-custom-light"><span class="counter" data-target="100">0</span>%</p>
+                <p class="text-3xl sm:text-5xl font-black counter-stat"><span class="counter" data-target="100">0</span>%</p>
                 <p class="text-xs uppercase font-extrabold tracking-wider text-slate-400">Bachillerato Bivalente</p>
             </div>
             <div class="pt-4 md:pt-0 space-y-1">
-                <p class="text-3xl sm:text-5xl font-black text-custom-light">+<span class="counter" data-target="200">0</span></p>
+                <p class="text-3xl sm:text-5xl font-black counter-stat">+<span class="counter" data-target="200">0</span></p>
                 <p class="text-xs uppercase font-extrabold tracking-wider text-slate-400">Alumnos Matriculados</p>
             </div>
             <div class="pt-4 md:pt-0 space-y-1">
-                <p class="text-3xl sm:text-5xl font-black text-custom-light"><span class="counter" data-target="2">0</span></p>
+                <p class="text-3xl sm:text-5xl font-black counter-stat"><span class="counter" data-target="2">0</span></p>
                 <p class="text-xs uppercase font-extrabold tracking-wider text-slate-400">Especialidades Técnicas</p>
             </div>
             <div class="pt-4 md:pt-0 space-y-1">
-                <p class="text-3xl sm:text-5xl font-black text-custom-light">+<span class="counter" data-target="10">0</span></p>
+                <p class="text-3xl sm:text-5xl font-black counter-stat">+<span class="counter" data-target="10">0</span></p>
                 <p class="text-xs uppercase font-extrabold tracking-wider text-slate-400">Docentes Titulares</p>
             </div>
         </div>
     </section>
 
+    <!-- ESPECIALIDADES -->
     <section id="oferta" class="py-20 px-5 sm:px-8 max-w-7xl w-full mx-auto space-y-14">
         <div class="text-center max-w-2xl mx-auto space-y-3">
             <span class="text-xs font-bold text-custom-primary uppercase tracking-widest bg-custom-light px-3.5 py-1 rounded-full border border-custom-primary/30">
@@ -226,25 +294,26 @@
                 Especialidades con Título y Cédula
             </h2>
             <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
-                Formación profesional técnica que te permite ingresar al sector productivo o continuar tus estudios universitarios.
+                Formación profesional técnica que te permite incorporarte al sector productivo o continuar con estudios superiores.
             </p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             
+            <!-- Animación Digital -->
             <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-custom-primary/60 transition-all duration-300 space-y-5 flex flex-col justify-between group">
                 <div class="space-y-4">
                     <div class="w-14 h-14 bg-custom-light text-custom-primary rounded-2xl flex items-center justify-center border border-custom-primary/20 group-hover:bg-custom-primary group-hover:text-white transition-colors duration-300 shadow-2xs">
                         <span class="material-icons-round text-3xl">animation</span>
                     </div>
                     <div>
-                        <span class="text-[10px] font-extrabold text-indigo-600 uppercase tracking-widest block mb-1">Área Creativa & Tecnológica</span>
+                        <span class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest block mb-1">Área Tecnológica</span>
                         <h4 class="font-extrabold text-slate-900 text-lg sm:text-xl tracking-tight">
                             Técnico en Animación Digital
                         </h4>
                     </div>
                     <p class="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
-                        Domina el modelado tridimensional, la creación de efectos visuales, ilustración digital y procesos de postproducción audiovisual utilizando software especializado de la industria.
+                        Domina el modelado tridimensional, la creación de efectos visuales, ilustración digital y procesos de postproducción audiovisual mediante software especializado.
                     </p>
                 </div>
                 <div class="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-500">
@@ -253,30 +322,32 @@
                 </div>
             </div>
 
-            <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-indigo-400 transition-all duration-300 space-y-5 flex flex-col justify-between group">
+            <!-- Química Industrial -->
+            <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-custom-primary/60 transition-all duration-300 space-y-5 flex flex-col justify-between group">
                 <div class="space-y-4">
-                    <div class="w-14 h-14 bg-indigo-50 text-indigo-700 rounded-2xl flex items-center justify-center border border-indigo-100 group-hover:bg-indigo-700 group-hover:text-white transition-colors duration-300 shadow-2xs">
+                    <div class="w-14 h-14 bg-custom-light text-custom-primary rounded-2xl flex items-center justify-center border border-custom-primary/20 group-hover:bg-custom-primary group-hover:text-white transition-colors duration-300 shadow-2xs">
                         <span class="material-icons-round text-3xl">science</span>
                     </div>
                     <div>
-                        <span class="text-[10px] font-extrabold text-emerald-600 uppercase tracking-widest block mb-1">Área Industrial & Procesos</span>
+                        <span class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest block mb-1">Área Industrial</span>
                         <h4 class="font-extrabold text-slate-900 text-lg sm:text-xl tracking-tight">
                             Técnico en Química Industrial
                         </h4>
                     </div>
                     <p class="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
-                        Capacítate en el control de calidad, análisis instrumentales de laboratorio químico, supervisión de procesos de manufactura y cumplimiento de normas de bioseguridad.
+                        Capacítate en el control de calidad, análisis instrumentales de laboratorio, supervisión de procesos de manufactura y cumplimiento de normas de bioseguridad.
                     </p>
                 </div>
                 <div class="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-500">
                     <span>6 Semestres</span>
-                    <span class="text-indigo-700 group-hover:translate-x-1 transition-transform flex items-center gap-1">Conocer más <span class="material-icons-round text-sm">arrow_forward</span></span>
+                    <span class="text-custom-primary group-hover:translate-x-1 transition-transform flex items-center gap-1">Conocer más <span class="material-icons-round text-sm">arrow_forward</span></span>
                 </div>
             </div>
 
         </div>
     </section>
 
+    <!-- COMUNIDAD ESCOLAR -->
     <section id="comunidad" class="bg-slate-100/80 py-20 px-5 sm:px-8 border-y border-slate-200">
         <div class="max-w-7xl w-full mx-auto space-y-14">
             <div class="text-center max-w-2xl mx-auto space-y-3">
@@ -287,9 +358,10 @@
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
                 
+                <!-- Estudiantes -->
                 <div class="bg-white p-7 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all space-y-5 flex flex-col justify-between">
                     <div class="space-y-4">
-                        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 border border-blue-100 flex items-center justify-center">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center">
                             <span class="material-icons-round text-2xl">school</span>
                         </div>
                         <h4 class="font-extrabold text-base sm:text-lg text-slate-900">Estudiantes</h4>
@@ -302,9 +374,10 @@
                     </button>
                 </div>
 
+                <!-- Docentes -->
                 <div class="bg-white p-7 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all space-y-5 flex flex-col justify-between">
                     <div class="space-y-4">
-                        <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-700 border border-purple-100 flex items-center justify-center">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center">
                             <span class="material-icons-round text-2xl">co_present</span>
                         </div>
                         <h4 class="font-extrabold text-base sm:text-lg text-slate-900">Plantilla Docente</h4>
@@ -317,14 +390,15 @@
                     </button>
                 </div>
 
+                <!-- Administración -->
                 <div class="bg-white p-7 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all space-y-5 flex flex-col justify-between">
                     <div class="space-y-4">
-                        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center">
                             <span class="material-icons-round text-2xl">admin_panel_settings</span>
                         </div>
                         <h4 class="font-extrabold text-base sm:text-lg text-slate-900">Coordinación & Control</h4>
                         <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                            Distribución de cargas docentes, asignación de los 3 sínodos por carrera, validación de pagos y control de accesos.
+                            Distribución de cargas docentes, asignación de jurados por carrera, validación de pagos y control de accesos.
                         </p>
                     </div>
                     <button type="button" onclick="toggleLoginModal()" class="w-full py-3 bg-custom-primary hover:bg-custom-primary-hover text-white text-xs sm:text-sm font-bold rounded-xl transition-colors cursor-pointer shadow-2xs">
@@ -336,36 +410,37 @@
         </div>
     </section>
 
+    <!-- MÓDULOS DE GESTIÓN -->
     <section id="areas" class="py-20 px-5 sm:px-8 max-w-7xl w-full mx-auto space-y-14">
         <div class="text-center max-w-2xl mx-auto space-y-3">
             <h3 class="text-xs font-bold text-custom-primary uppercase tracking-widest">Organización</h3>
             <h2 class="text-2xl sm:text-4xl font-black text-slate-900">Módulos Administrativos Centrales</h2>
-            <p class="text-slate-600 text-xs sm:text-sm">Gestión integral para mantener la excelencia académica del plantel.</p>
+            <p class="text-slate-600 text-xs sm:text-sm">Gestión integral para mantener la operatividad y seguimiento escolar.</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-white p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
-                <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center">
+                <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center">
                     <span class="material-icons-round text-2xl">gavel</span>
                 </div>
                 <h4 class="font-bold text-base text-slate-900">Coordinación Académica</h4>
                 <p class="text-xs text-slate-600 leading-relaxed">
-                    Supervisión de horarios, asignación equitativa de sínodos examinadores y seguimiento de planes de estudio.
+                    Supervisión de horarios, asignación de los 3 sínodos por carrera y seguimiento de planes de estudio.
                 </p>
             </div>
 
             <div class="bg-white p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
-                <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center">
+                <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center">
                     <span class="material-icons-round text-2xl">assignment_ind</span>
                 </div>
                 <h4 class="font-bold text-base text-slate-900">Orientación Educativa</h4>
                 <p class="text-xs text-slate-600 leading-relaxed">
-                    Monitoreo oportuno de inasistencias acumuladas y acompañamiento psicopedagógico del estudiante.
+                    Monitoreo oportuno de inasistencias acumuladas y acompañamiento integral del estudiante.
                 </p>
             </div>
 
             <div class="bg-white p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
-                <div class="w-12 h-12 rounded-2xl bg-custom-light text-custom-primary flex items-center justify-center">
+                <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center">
                     <span class="material-icons-round text-2xl">analytics</span>
                 </div>
                 <h4 class="font-bold text-base text-slate-900">Control Escolar</h4>
@@ -376,6 +451,7 @@
         </div>
     </section>
 
+    <!-- FOOTER -->
     <footer class="bg-slate-900 text-slate-300 text-xs sm:text-sm py-10 px-5 sm:px-8 mt-auto border-t border-slate-800">
         <div class="max-w-7xl w-full mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
             <p class="font-medium">© 2026 SUIE — Sistema Unificado de Integración Educativa. CECyTE 13 Tepetitla.</p>
@@ -383,6 +459,7 @@
         </div>
     </footer>
 
+    <!-- MODAL DE INICIO DE SESIÓN -->
     <div id="loginModal" 
          class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 {{ $errors->has('username') ? 'opacity-100' : 'opacity-0 pointer-events-none' }}">
         
@@ -398,18 +475,19 @@
                 </button>
             </div>
 
+            <!-- AVISO DE CUMPLIMIENTO ELECTORAL EN MODAL -->
             @if(!empty($mostrarAvisoVeda))
-                <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-900 text-xs flex items-start gap-2.5 shadow-2xs">
-                    <span class="material-icons-round text-base text-amber-600 shrink-0 mt-0.5">gavel</span>
+                <div class="p-3.5 rounded-2xl bg-slate-100 border border-slate-300 text-slate-800 text-xs flex items-start gap-2.5 shadow-2xs">
+                    <span class="material-icons-round text-base text-slate-600 shrink-0 mt-0.5">gavel</span>
                     <p class="leading-relaxed font-medium">
-                        Para poder cumplir con la normativa de la ley estatal y federal en materia electoral, este sistema modificará sus contenidos temporalmente.
+                        Para cumplir con la normativa de la ley estatal y federal en materia electoral, este sistema modificará sus contenidos temporalmente.
                     </p>
                 </div>
             @endif
 
             @error('username')
-                <div class="bg-rose-50 border border-rose-200 text-rose-800 p-3.5 rounded-2xl text-xs flex items-start gap-2.5">
-                    <span class="material-icons-round text-base mt-0.5 shrink-0 text-rose-600">error</span>
+                <div class="bg-slate-100 border border-slate-300 text-slate-800 p-3.5 rounded-2xl text-xs flex items-start gap-2.5">
+                    <span class="material-icons-round text-base mt-0.5 shrink-0 text-slate-600">error</span>
                     <p class="font-semibold">{{ $message }}</p>
                 </div>
             @enderror
@@ -419,13 +497,13 @@
                 <div>
                     <label class="block font-bold text-slate-700 mb-1.5">Usuario / Matrícula</label>
                     <input type="text" name="username" value="{{ old('username') }}" required 
-                           class="w-full bg-slate-50 text-slate-900 border @error('username') border-rose-400 focus:ring-rose-500 @else border-slate-300 focus:ring-custom-primary @enderror rounded-2xl p-3.5 font-medium focus:outline-hidden transition-all text-xs sm:text-sm" 
+                           class="w-full bg-slate-50 text-slate-900 border @error('username') border-slate-400 focus:ring-slate-500 @else border-slate-300 focus:ring-custom-primary @enderror rounded-2xl p-3.5 font-medium focus:outline-hidden transition-all text-xs sm:text-sm" 
                            placeholder="Ej: 22240105 o DOC-102">
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1.5">Contraseña</label>
                     <input type="password" name="password" required 
-                           class="w-full bg-slate-50 text-slate-900 border @error('username') border-rose-400 focus:ring-rose-500 @else border-slate-300 focus:ring-custom-primary @enderror rounded-2xl p-3.5 font-medium focus:outline-hidden transition-all text-xs sm:text-sm" 
+                           class="w-full bg-slate-50 text-slate-900 border @error('username') border-slate-400 focus:ring-slate-500 @else border-slate-300 focus:ring-custom-primary @enderror rounded-2xl p-3.5 font-medium focus:outline-hidden transition-all text-xs sm:text-sm" 
                            placeholder="••••••••">
                 </div>
                 <div class="pt-2">
@@ -437,14 +515,14 @@
             </form>
 
             <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-[11px] text-slate-500 leading-relaxed flex items-start gap-2.5">
-                <span class="material-icons-round text-base text-emerald-600 shrink-0 mt-0.5">verified_user</span>
+                <span class="material-icons-round text-base text-slate-600 shrink-0 mt-0.5">verified_user</span>
                 <p>Acceso cifrado y seguro para la comunidad educativa.</p>
             </div>
         </div>
     </div>
 
+    <!-- SCRIPTS -->
     <script>
-        // Lógica del Carrusel
         let currentSlide = 0;
         const slides = document.querySelectorAll('.carousel-item');
         const indicators = document.getElementById('carousel-indicators').children;
@@ -488,7 +566,6 @@
             carouselInterval = setInterval(nextSlide, 5000);
         }
 
-        // Lógica del Modal
         function toggleLoginModal() {
             const modal = document.getElementById('loginModal');
             const box = document.getElementById('loginBox');
@@ -506,7 +583,6 @@
             }
         }
 
-        // Animación de Contadores al hacer scroll
         const startCounters = () => {
             const counters = document.querySelectorAll('.counter');
             const speed = 60;

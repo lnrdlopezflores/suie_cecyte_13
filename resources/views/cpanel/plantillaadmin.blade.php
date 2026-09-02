@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>SUIE Admin - @yield('title')</title>
     
     <!-- Tailwind CSS v4 Browser -->
@@ -16,18 +17,28 @@
     <link rel="icon" href="{{ asset('assets/images/logo.png') }}" type="image/png">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
-    <!-- Inicialización de Tema Oscuro y Sincronización de Color con Base de Datos -->
+    <!-- Inicialización de Tema por Usuario y Sincronización de Color -->
     <script>
         (function() {
-            const savedTheme = localStorage.getItem('theme');
-            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+            // Clave única para evitar conflictos entre diferentes cuentas en el mismo navegador
+            const userKey = 'suie_theme_u_{{ auth()->id() ?? "guest" }}';
+            const userDbTheme = "{{ auth()->user()->tema ?? '' }}";
+            const localTheme = localStorage.getItem(userKey);
+
+            // Prioridad: 1. BD del usuario autenticado, 2. LocalStorage por ID, 3. Preferencia del SO
+            let activeTheme = userDbTheme || localTheme;
+            if (!activeTheme) {
+                activeTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+
+            if (activeTheme === 'dark') {
                 document.documentElement.classList.add('dark');
             } else {
                 document.documentElement.classList.remove('dark');
             }
+            localStorage.setItem(userKey, activeTheme);
 
-            // Sincronizar localStorage con el color proveniente de la Base de Datos
+            // Sincronizar colores institucionales
             const dbPrimary = "{{ $colorPrimario ?? '#841B44' }}";
             const dbHover   = "{{ $colorHover ?? '#681535' }}";
             localStorage.setItem('suie_primary_color', dbPrimary);
@@ -44,10 +55,10 @@
         }
 
         /* 1. Clases utilitarias directas */
-        .bg-custom-primary { background-color: var(--color-primary) !important; }
+        .bg-custom-primary { background-color: var(--color-primary) !important; color: #ffffff !important; }
         .text-custom-primary { color: var(--color-primary) !important; }
         .border-custom-primary { border-color: var(--color-primary) !important; }
-        .hover\:bg-custom-primary-hover:hover { background-color: var(--color-primary-hover) !important; }
+        .hover\:bg-custom-primary-hover:hover { background-color: var(--color-primary-hover) !important; color: #ffffff !important; }
 
         /* 2. Sobrescritura forzada de clases estáticas heredadas */
         [class*="bg-[#841B44]"],
@@ -207,11 +218,29 @@
                 overlay.addEventListener('click', toggleSidebar);
             }
 
+            // Alternancia y guardado individual del tema
             const btnTheme = document.getElementById('btn-theme-toggle');
             if (btnTheme) {
                 btnTheme.addEventListener('click', function () {
                     const isDark = document.documentElement.classList.toggle('dark');
-                    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                    const selectedTheme = isDark ? 'dark' : 'light';
+                    const userKey = 'suie_theme_u_{{ auth()->id() ?? "guest" }}';
+
+                    // 1. Guardar en localStorage de este usuario
+                    localStorage.setItem(userKey, selectedTheme);
+
+                    // 2. Guardar en Base de Datos de manera asíncrona
+                    @if(auth()->check())
+                        fetch("{{ route('usuario.actualizar-tema') }}", {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ tema: selectedTheme })
+                        }).catch(err => console.error('Error guardando preferencia de tema:', err));
+                    @endif
                 });
             }
         });

@@ -15,17 +15,32 @@
 
     <link class="rounded-xs" rel="icon" href="{{ asset('assets/images/logo.png') }}" type="image/png">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- Inicialización inmediata del tema -->
     <script>
-        const savedTheme = localStorage.getItem('theme');
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        
-        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
+        (function() {
+            const userKey = 'suie_theme_u_{{ auth()->id() ?? "guest" }}';
+            const userDbTheme = "{{ auth()->user()->tema ?? '' }}";
+            const localTheme = localStorage.getItem(userKey);
+
+            let activeTheme = userDbTheme || localTheme;
+            if (!activeTheme) {
+                activeTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+
+            if (activeTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            localStorage.setItem(userKey, activeTheme);
+
+            const dbPrimary = "{{ $colorPrimario ?? '#841B44' }}";
+            const dbHover   = "{{ $colorHover ?? '#681535' }}";
+            localStorage.setItem('suie_primary_color', dbPrimary);
+            localStorage.setItem('suie_primary_hover', dbHover);
+        })();
     </script>
 
     <!-- Inyección Dinámica y Sobrescritura Global de Colores SUIE -->
@@ -266,7 +281,24 @@
             if (btnTheme) {
                 btnTheme.addEventListener('click', function () {
                     const isDark = document.documentElement.classList.toggle('dark');
-                    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                    const selectedTheme = isDark ? 'dark' : 'light';
+                    const userKey = 'suie_theme_u_{{ auth()->id() ?? "guest" }}';
+
+                    // 1. Guardar en localStorage bajo la clave del usuario
+                    localStorage.setItem(userKey, selectedTheme);
+
+                    // 2. Guardar en la base de datos de manera asíncrona
+                    @if(auth()->check())
+                        fetch("{{ route('usuario.actualizar-tema') }}", {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ tema: selectedTheme })
+                        }).catch(err => console.error('Error guardando preferencia de tema:', err));
+                    @endif
                 });
             }
         });

@@ -40,7 +40,7 @@ class LoginController extends Controller
 
                 // 4. Redirección por Match de Rol
                 return match ($userAuth->rol) {
-                    'Coordinador'     => redirect()->route('coordinacion.dashboard'),
+                    'Coordinador'     => redirect()->route('coordinador.dashboard'),
                     'Orientador'      => redirect()->route('orientacion.asistencias'),
                     'Control Escolar' => redirect()->route('alumnos.index'),
                     'Docente'         => redirect()->route('dashboardDocente.index'),
@@ -62,7 +62,7 @@ class LoginController extends Controller
         // Si el usuario ya está autenticado, hacemos el Match de redirección
         if (Auth::check()) {
             return match (Auth::user()->rol) {
-                'Coordinador'     => redirect()->route('coordinacion.dashboard'),
+                'Coordinador'     => redirect()->route('coordinador.dashboard'),
                 'Orientador'      => redirect()->route('orientacion.asistencias'),
                 'Control Escolar' => redirect()->route('alumnos.index'),
                 'Docente'         => redirect()->route('dashboardDocente.index'),

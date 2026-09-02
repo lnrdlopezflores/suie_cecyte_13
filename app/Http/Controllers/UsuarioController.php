@@ -116,4 +116,22 @@ class UsuarioController extends Controller
         $accion = $nuevoEstatus ? 'reactivado' : 'suspendido';
         return redirect()->back()->with('success', "El usuario {$usuario->username} ha sido {$accion} correctamente.");
     }
+
+    
+    public function updatePassword(Request $request, $id)
+    {
+        $request->validate([
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
+        ], [
+            'password.confirmed' => 'Las contraseñas no coinciden.',
+            'password.min'       => 'La contraseña debe tener al menos 6 caracteres.',
+        ]);
+
+        DB::table('usuarios')->where('id', $id)->update([
+            'password'   => Hash::make($request->input('password')),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Contraseña actualizada correctamente.');
+    }
 }

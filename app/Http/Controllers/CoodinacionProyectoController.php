@@ -12,22 +12,28 @@ class CoodinacionProyectoController extends Controller
         $carrera = $request->input('carrera');
         $buscar  = $request->input('buscar');
 
+        // 1. Unir proyectos con los alumnos y sus respectivos grupos para obtener la especialidad
         $query = DB::table('proyectos_titulacion')
+            ->join('proyecto_alumno', 'proyectos_titulacion.id', '=', 'proyecto_alumno.proyecto_id')
+            ->join('alumnos', 'proyecto_alumno.alumno_id', '=', 'alumnos.id')
+            ->join('grupos', 'alumnos.grupo_id', '=', 'grupos.id')
             ->leftJoin('docentes as asesor', 'proyectos_titulacion.docente_asesor_id', '=', 'asesor.id')
             ->leftJoin('usuarios as asesor_user', 'asesor.usuario_id', '=', 'asesor_user.id')
             ->select(
                 'proyectos_titulacion.*',
+                'grupos.especialidad',
                 'asesor.nombre as asesor_nombre',
                 'asesor.apellido_paterno as asesor_paterno',
                 'asesor_user.username as asesor_username'
-            );
+            )
+            ->distinct();
 
-        // Filtro por Carrera/Especialidad
+        // 2. Filtro por Carrera / Especialidad usando la columna real 'grupos.especialidad'
         if (!empty($carrera)) {
-            $query->where('proyectos_titulacion.especialidad', $carrera);
+            $query->where('grupos.especialidad', $carrera);
         }
 
-        // Búsqueda por título o resumen
+        // 3. Filtro de Búsqueda
         if (!empty($buscar)) {
             $query->where(function ($q) use ($buscar) {
                 $q->where('proyectos_titulacion.titulo', 'LIKE', '%' . $buscar . '%')
@@ -37,7 +43,7 @@ class CoodinacionProyectoController extends Controller
 
         $proyectos = $query->orderBy('proyectos_titulacion.id', 'desc')->paginate(10);
 
-        // Cruce de integrantes por cada proyecto
+        // 4. Cargar los integrantes de cada proyecto
         $proyectoIds = $proyectos->pluck('id')->toArray();
         $todosIntegrantes = DB::table('proyecto_alumno')
             ->join('alumnos', 'proyecto_alumno.alumno_id', '=', 'alumnos.id')
@@ -58,6 +64,7 @@ class CoodinacionProyectoController extends Controller
             return $proyecto;
         });
 
+        // 5. Conteo de aprobados para métricas rápidas
         $totalAprobados = DB::table('proyectos_titulacion')->where('estatus', 'Aprobado')->count();
 
         return view('cpanel.coordinacion.proyectosregistrados', compact('proyectos', 'totalAprobados'));

@@ -21,6 +21,8 @@ use App\Http\Controllers\CoodinacionCargaController;
 use App\Http\Controllers\CoodinacionProyectoController;
 use App\Http\Controllers\JuradosController;
 use App\Http\Controllers\ColoresController;
+use App\Http\Controllers\CoordinacionDashboardController;
+use App\Http\Controllers\UsuarioPreferenciaController;
 
 
 Route::get('/', function () {
@@ -30,6 +32,7 @@ Route::get('/', function () {
 Route::get('/login', [LoginController::class, 'redirectByRol'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.post');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+Route::middleware('auth')->patch('/usuario/preferencia-tema', [UsuarioPreferenciaController::class, 'actualizarTema'])->name('usuario.actualizar-tema');
 
 Route::middleware(['auth', 'rol:administrador'])->group(function () {
     Route::resource('/admon/usuarios', UsuarioController::class)->names('usuarios');
@@ -40,6 +43,7 @@ Route::middleware(['auth', 'rol:administrador'])->group(function () {
     Route::patch('/admon/alumnos/toggle/{id}', [AlumnosAdminController::class, 'store'])->name('admin.alumnos.toggle-status');
     Route::get('/configuracion/colores', [ColoresController::class, 'index'])->name('admin.colores.index');
     Route::post('/configuracion/colores', [ColoresController::class, 'store'])->name('admin.colores.store');
+    Route::patch('/admon/usuarios/{id}/password', [UsuarioController::class, 'updatePassword'])->name('usuarios.update-password');
 });
 
 Route::middleware(['auth', 'rol:Estudiante'])->group(function () {
@@ -73,10 +77,15 @@ Route::middleware(['auth', 'rol:Docente'])->group(function () {
     Route::post('/titulacion/votar-jurado', [DocenteTitulacionController::class, 'votarJurado'])->name('docente.titulacion.votar-jurado');
 });
 
-Route::resource('/coordinador/cargas', CoodinacionCargaController::class)->names('coordinador.cargas');
-Route::resource('/coordinador/proyectos', CoodinacionProyectoController::class)->names('coordinador.proyectos');
-Route::get('/jurados/{carrera}', [JuradosController::class, 'carrera'])->name('coordinador.jurados.carrera');
-Route::post('/jurados/guardar', [JuradosController::class, 'guardar'])->name('coordinador.jurados.guardar');
+Route::middleware(['auth', 'rol:Coordinador'])->group(function(){
+    Route::resource('/coordinador/cargas', CoodinacionCargaController::class)->names('coordinador.cargas');
+    Route::resource('/coordinador/proyectos', CoodinacionProyectoController::class)->names('coordinador.proyectos');
+    Route::get('/jurados/{carrera}', [JuradosController::class, 'carrera'])->name('coordinador.jurados.carrera');
+    Route::post('/jurados/guardar', [JuradosController::class, 'guardar'])->name('coordinador.jurados.guardar');
+    Route::post('/jurados/guardar-todos', [JuradosController::class, 'guardarTodos'])->name('coordinador.jurados.guardar-todos');
+    Route::get('/dashboard', [CoordinacionDashboardController::class, 'index'])->name('coordinador.dashboard');
+});
+
 
 
 Route::resource('/finanzas/pagos', ValidarPagoController::class)->names('contador.pagos');
