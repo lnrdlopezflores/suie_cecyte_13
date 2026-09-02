@@ -72,7 +72,7 @@ $alumnosPaginados->getCollection()->transform(function ($alumno) {
     return $alumno;
 });
 
-        return view('cpanel/Alumnos/indexalumnos', ['alumnos' => $alumnosPaginados]);
+        return view('cpanel/alumnos/indexalumnos', ['alumnos' => $alumnosPaginados]);
     }
 
     public function create()
@@ -85,7 +85,7 @@ $alumnosPaginados->getCollection()->transform(function ($alumno) {
             ->orderBy('usuarios.username', 'asc')
             ->get();
 
-        return view('cpanel/Alumnos/createalumnos', compact('usuariosDisponibles'));
+        return view('cpanel/alumnos/createalumnos', compact('usuariosDisponibles'));
     }
 
     /**
