@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>SUIE - @yield('title')</title>
     
     <!-- Tailwind CSS v4 Browser -->
@@ -16,15 +17,30 @@
     <link rel="icon" href="{{ asset('assets/images/logo.png') }}" type="image/png">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
-    <!-- Inicialización del tema antes del renderizado -->
+    <!-- Inicialización de Tema por Usuario y Sincronización de Color -->
     <script>
-        const savedTheme = localStorage.getItem('theme');
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
+        (function() {
+            const userKey = 'suie_theme_u_{{ auth()->id() ?? "guest" }}';
+            const userDbTheme = "{{ auth()->user()->tema ?? '' }}";
+            const localTheme = localStorage.getItem(userKey);
+
+            let activeTheme = userDbTheme || localTheme;
+            if (!activeTheme) {
+                activeTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+
+            if (activeTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            localStorage.setItem(userKey, activeTheme);
+
+            const dbPrimary = "{{ $colorPrimario ?? '#841B44' }}";
+            const dbHover   = "{{ $colorHover ?? '#681535' }}";
+            localStorage.setItem('suie_primary_color', dbPrimary);
+            localStorage.setItem('suie_primary_hover', dbHover);
+        })();
     </script>
 
     <!-- Inyección Dinámica y Sobrescritura Global de Colores SUIE -->
@@ -84,7 +100,6 @@
             color: var(--color-primary) !important;
         }
 
-        /* Solo los badges o pills pequeños cambian a color light, no los fondos principales */
         span[class*="bg-rose-50"],
         div[class*="bg-rose-50"]:not(main):not(section):not(body) {
             background-color: var(--color-primary-light) !important;
@@ -95,31 +110,36 @@
     <div class="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950">
         
         <!-- HEADER / TOPBAR -->
-        <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xs px-5 md:px-8 py-4 flex justify-between items-center sticky top-0 z-40 transition-colors duration-200">
+        <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xs px-4 md:px-7 h-16 md:h-18 flex justify-between items-center sticky top-0 z-40 transition-colors duration-200">
+            
+            <!-- Lado Izquierdo: Identidad y Badge Opcional -->
             <div class="flex items-center space-x-3.5">
-                <span class="material-icons-round text-3xl md:text-4xl text-custom-primary">hub</span>
+                <div class="w-10 h-10 rounded-xl bg-custom-primary flex items-center justify-center shadow-xs shrink-0">
+                    <span class="material-icons-round text-2xl text-white">hub</span>
+                </div>
                 <div>
                     <h1 class="text-lg md:text-xl font-black tracking-wider leading-none text-custom-primary">SUIE</h1>
-                    <p class="text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-widest mt-1 xs:block">Sistema Unificado de Integración Educativa</p>
+                    <p class="text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-widest mt-0.5">Portal Institucional Docente</p>
                 </div>
+
+                @if(View::hasSection('grupo_badge'))
+                    <div class="hidden lg:inline-flex items-center px-3 py-1 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/80 text-custom-primary text-xs font-black rounded-lg uppercase tracking-wider ml-2">
+                        @yield('grupo_badge')
+                    </div>
+                @endif
             </div>
             
-            <div class="flex items-center space-x-3 md:space-x-5">
-                <!-- BOTÓN TOGGLE MODO OSCURO -->
+            <!-- Lado Derecho: Tema y Menú Desplegable -->
+            <div class="flex items-center space-x-3 md:space-x-4">
+                
+                <!-- Botón Alternar Modo Oscuro -->
                 <button id="btn-theme-toggle" type="button" aria-label="Alternar tema"
-                        class="p-2.5 text-slate-500 dark:text-slate-300 hover:text-custom-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700/80 shadow-3xs">
+                        class="p-2.5 text-slate-500 dark:text-slate-400 hover:text-custom-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700/80 shadow-3xs">
                     <span id="theme-icon-light" class="material-icons-round text-xl hidden dark:block text-amber-400">light_mode</span>
                     <span id="theme-icon-dark" class="material-icons-round text-xl block dark:hidden text-slate-600">dark_mode</span>
                 </button>
 
                 @if(auth()->check())
-                    <!-- BADGE GRADO/GRUPO DINÁMICO -->
-                    @if(View::hasSection('grupo_badge'))
-                        <div class="hidden sm:inline-flex items-center px-4 py-1.5 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-custom-primary text-xs font-bold rounded-full uppercase tracking-wider">
-                            @yield('grupo_badge')
-                        </div>
-                    @endif
-
                     @php
                         $docenteNombre = '';
                         $docenteApellido = '';
@@ -157,66 +177,80 @@
                         }
                     @endphp
 
-                    <div class="text-right hidden md:block border-l border-slate-200 dark:border-slate-800 pl-4">
-                        @if(auth()->user()->docente)
-                            <p class="text-sm font-bold text-slate-900 dark:text-slate-100 truncate max-w-[220px]">
-                                Prof. {{ $docenteNombre }} {{ $docenteApellido }}
-                            </p>
-                        @else
-                            <p class="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase">
-                                {{ auth()->user()->rol ?? 'Usuario' }}
-                            </p>
-                        @endif
-                        <p class="text-xs text-custom-primary font-bold uppercase font-mono mt-0.5">
-                            ID: {{ auth()->user()->username }}
-                        </p>
-                    </div>
+                    <!-- Dropdown de Perfil -->
+                    <div class="relative" id="profile-menu-container">
+                        <button id="profileDropdownBtn" type="button" 
+                                class="flex items-center gap-3 p-1 md:pr-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all cursor-pointer select-none">
+                            
+                            <div class="w-9 h-9 md:w-10 md:h-10 bg-slate-100 dark:bg-slate-800 text-custom-primary font-black rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-700 text-xs md:text-sm shrink-0 shadow-3xs">
+                                {{ $inicialesAvatar }}
+                            </div>
 
-                    <!-- DROPDOWN DE PERFIL -->
-                    <div class="relative">
-                        <button id="profileDropdownBtn" class="w-11 h-11 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/80 text-custom-primary rounded-2xl flex items-center justify-center font-black border border-rose-200 dark:border-rose-900/60 text-sm uppercase cursor-pointer focus:outline-hidden transition-colors select-none shadow-3xs">
-                            {{ $inicialesAvatar }}
-                        </button>
-
-                        <div id="profileDropdown" class="hidden absolute right-0 mt-3 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl py-2 z-50 transform origin-top-right transition-all">
-                            <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 md:hidden bg-slate-50/60 dark:bg-slate-800/40 rounded-t-2xl">
-                                <p class="text-sm font-black text-slate-900 dark:text-slate-100 truncate">
+                            <div class="text-left hidden sm:block">
+                                <p class="text-xs md:text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight truncate max-w-[200px]">
                                     @if(auth()->user()->docente)
                                         Prof. {{ $docenteNombre }} {{ $docenteApellido }}
                                     @else
                                         {{ auth()->user()->rol ?? 'Usuario' }}
                                     @endif
                                 </p>
-                                <p class="text-xs font-mono text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                                    Matrícula: {{ auth()->user()->username }}
+                                <p class="text-[10px] text-custom-primary font-bold uppercase font-mono tracking-wider mt-0.5">
+                                    ID: {{ auth()->user()->username }}
                                 </p>
                             </div>
 
-                            <form action="{{ route('logout') }}" method="POST" id="logout-form">
+                            <span class="material-icons-round text-base text-slate-400 hidden sm:block">expand_more</span>
+                        </button>
+
+                        <!-- Menú Desplegable -->
+                        <div id="profileDropdown" 
+                             class="hidden absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2 space-y-1.5 z-50">
+                            
+                            <!-- Tarjeta interna con información del usuario -->
+                            <div class="px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700/60">
+                                <p class="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider">Identidad Registrada</p>
+                                <p class="text-xs font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">
+                                    @if(auth()->user()->docente)
+                                        {{ $docenteNombre }} {{ $docenteApellido }}
+                                    @else
+                                        {{ auth()->user()->username }}
+                                    @endif
+                                </p>
+                                <span class="inline-block mt-1 px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-rose-50 dark:bg-rose-950/60 text-custom-primary border border-rose-200 dark:border-rose-900/60">
+                                    Rol: {{ auth()->user()->rol ?? 'Docente' }}
+                                </span>
+                            </div>
+
+                            <!-- Formulario de Cierre de Sesión -->
+                            <form action="{{ route('logout') }}" method="POST">
                                 @csrf
-                                <button type="submit" class="w-full text-left flex items-center gap-2.5 px-4 py-3 text-xs md:text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer">
-                                    <span class="material-icons-round text-lg">logout</span> Cerrar Sesión
+                                <button type="submit" 
+                                        class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer">
+                                    <span class="material-icons-round text-base">logout</span>
+                                    <span>Cerrar Sesión</span>
                                 </button>
                             </form>
                         </div>
                     </div>
                 @else
-                    <div class="text-right hidden md:block">
+                    <div class="text-right hidden sm:block">
                         <p class="text-xs font-bold text-slate-500 dark:text-slate-400">Usuario Invitado</p>
                     </div>
                 @endif
+
             </div>
         </header>
         
-        <!-- CUERPO PRINCIPAL -->
+        <!-- CONTENIDO PRINCIPAL -->
         <main class="flex-1 w-full mx-auto bg-slate-50 dark:bg-slate-950">
             @yield('content')
         </main>
     </div>
 
-    <!-- SCRIPTS -->
+    <!-- SCRIPTS DE CONTROL -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // 1. Manejo del Dropdown de Perfil
             const dropdownBtn = document.getElementById('profileDropdownBtn');
             const dropdownMenu = document.getElementById('profileDropdown');
 
@@ -233,13 +267,36 @@
                 });
             }
 
+            // 2. Alternancia y Persistencia del Tema Oscuro por Usuario
             const btnTheme = document.getElementById('btn-theme-toggle');
             if (btnTheme) {
                 btnTheme.addEventListener('click', function () {
                     const isDark = document.documentElement.classList.toggle('dark');
-                    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                    const selectedTheme = isDark ? 'dark' : 'light';
+                    const userKey = 'suie_theme_u_{{ auth()->id() ?? "guest" }}';
+
+                    localStorage.setItem(userKey, selectedTheme);
+
+                    @if(auth()->check())
+                        fetch("{{ route('usuario.actualizar-tema') }}", {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ tema: selectedTheme })
+                        }).catch(err => console.error('Error guardando preferencia de tema:', err));
+                    @endif
                 });
             }
+
+            // 3. Accesibilidad: Cerrar menú con tecla Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && dropdownMenu) {
+                    dropdownMenu.classList.add('hidden');
+                }
+            });
         });
     </script>
 </body>

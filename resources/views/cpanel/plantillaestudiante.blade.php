@@ -8,7 +8,7 @@
     <!-- Tailwind CSS v4 Browser -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     
-    <!-- Configuración para que Tailwind v4 responda a la clase .dark en el HTML -->
+    <!-- Configuración para habilitar variante dark con la clase .dark en Tailwind v4 -->
     <style type="text/tailwindcss">
         @custom-variant dark (&:where(.dark, .dark *));
     </style>
@@ -17,7 +17,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <!-- Inicialización inmediata del tema -->
+    <!-- Inicialización de Tema por Usuario y Sincronización de Color -->
     <script>
         (function() {
             const userKey = 'suie_theme_u_{{ auth()->id() ?? "guest" }}';
@@ -44,88 +44,145 @@
     </script>
 
     <!-- Inyección Dinámica y Sobrescritura Global de Colores SUIE -->
-<style>
-    :root {
-        --color-primary: {{ $colorPrimario ?? '#841B44' }};
-        --color-primary-hover: {{ $colorHover ?? '#681535' }};
-        --color-primary-light: {{ $colorLight ?? '#fdf2f4' }};
-    }
+    <style>
+        :root {
+            --color-primary: {{ $colorPrimario ?? '#841B44' }};
+            --color-primary-hover: {{ $colorHover ?? '#681535' }};
+            --color-primary-light: {{ $colorLight ?? '#fdf2f4' }};
+        }
 
-    /* 1. Clases utilitarias directas */
-    .bg-custom-primary { background-color: var(--color-primary) !important; }
-    .text-custom-primary { color: var(--color-primary) !important; }
-    .border-custom-primary { border-color: var(--color-primary) !important; }
-    .hover\:bg-custom-primary-hover:hover { background-color: var(--color-primary-hover) !important; }
+        /* 1. Fondo fijo inalterable del layout */
+        body {
+            background-color: #f8fafc !important; /* slate-50 */
+        }
+        html.dark body {
+            background-color: #020617 !important; /* slate-950 */
+        }
 
-    /* 2. Sobrescritura mágica para selectores de Tailwind fijos existentes */
-    [class*="bg-[#841B44]"],
-    [class*="bg-\[\#841B44\]"] {
-        background-color: var(--color-primary) !important;
-    }
+        /* 2. Clases utilitarias directas */
+        .bg-custom-primary { background-color: var(--color-primary) !important; color: #ffffff !important; }
+        .text-custom-primary { color: var(--color-primary) !important; }
+        .border-custom-primary { border-color: var(--color-primary) !important; }
+        .hover\:bg-custom-primary-hover:hover { background-color: var(--color-primary-hover) !important; color: #ffffff !important; }
 
-    [class*="text-[#841B44]"],
-    [class*="text-\[\#841B44\]"] {
-        color: var(--color-primary) !important;
-    }
+        /* 3. Sobrescritura para elementos y botones (excluyendo fondos de layout) */
+        button[class*="bg-[#841B44]"],
+        a[class*="bg-[#841B44]"],
+        span[class*="bg-[#841B44]"],
+        div[class*="bg-[#841B44]"]:not(body):not(html),
+        button[class*="bg-\[\#841B44\]"],
+        a[class*="bg-\[\#841B44\]"],
+        span[class*="bg-\[\#841B44\]"] {
+            background-color: var(--color-primary) !important;
+            color: #ffffff !important;
+        }
 
-    [class*="border-[#841B44]"],
-    [class*="border-\[\#841B44\]"] {
-        border-color: var(--color-primary) !important;
-    }
+        [class*="text-[#841B44]"],
+        [class*="text-\[\#841B44\]"] {
+            color: var(--color-primary) !important;
+        }
 
-    [class*="hover:bg-[#681535]"]:hover,
-    [class*="hover:bg-[#6b1536]"]:hover,
-    [class*="hover:bg-\[\#681535\]"]:hover,
-    [class*="hover:bg-\[\#6b1536\]"]:hover {
-        background-color: var(--color-primary-hover) !important;
-    }
+        [class*="border-[#841B44]"],
+        [class*="border-\[\#841B44\]"] {
+            border-color: var(--color-primary) !important;
+        }
 
-    [class*="hover:text-[#841B44]"]:hover,
-    [class*="hover:text-\[\#841B44\]"]:hover {
-        color: var(--color-primary) !important;
-    }
+        [class*="hover:bg-[#681535]"]:hover,
+        [class*="hover:bg-[#6b1536]"]:hover,
+        [class*="hover:bg-\[\#681535\]"]:hover,
+        [class*="hover:bg-\[\#6b1536\]"]:hover {
+            background-color: var(--color-primary-hover) !important;
+            color: #ffffff !important;
+        }
 
-    [class*="bg-rose-50"] {
-        background-color: var(--color-primary-light) !important;
-    }
-</style>
+        [class*="hover:text-[#841B44]"]:hover,
+        [class*="hover:text-\[\#841B44\]"]:hover {
+            color: var(--color-primary) !important;
+        }
+
+        span[class*="bg-rose-50"],
+        div[class*="bg-rose-50"]:not(main):not(section):not(body) {
+            background-color: var(--color-primary-light) !important;
+        }
+    </style>
 </head>
-<body class="bg-slate-100 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 text-sm h-screen flex flex-col overflow-hidden transition-colors duration-200">
+<body class="bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 text-sm h-screen flex flex-col overflow-hidden transition-colors duration-200">
 
     <!-- HEADER PRINCIPAL -->
     <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 md:px-7 h-16 md:h-18 flex justify-between items-center shrink-0 z-50 relative shadow-2xs transition-colors duration-200">
+        
+        <!-- Lado Izquierdo: Menú Móvil + Identidad -->
         <div class="flex items-center space-x-3 md:space-x-4">
-            <button id="btn-toggle-sidebar" class="md:hidden text-slate-600 dark:text-slate-300 hover:text-[#841B44] dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-xl focus:outline-hidden inline-flex items-center cursor-pointer transition-colors">
+            <button id="btn-toggle-sidebar" type="button" aria-label="Abrir menú" 
+                    class="md:hidden text-slate-600 dark:text-slate-300 hover:text-custom-primary hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-xl focus:outline-hidden inline-flex items-center cursor-pointer transition-colors">
                 <span class="material-icons-round text-2xl">menu</span>
             </button>
             
-            <div class="flex items-center space-x-2.5">
-                <span class="material-icons-round text-3xl text-[#841B44] dark:text-rose-400">school</span>
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-custom-primary flex items-center justify-center shadow-xs shrink-0">
+                    <span class="material-icons-round text-2xl text-white">school</span>
+                </div>
                 <div>
-                    <h1 class="text-lg md:text-xl font-black tracking-wider leading-none text-[#841B44] dark:text-rose-400">SUIE</h1>
-                    <p class="text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-0.5 xs:block">Portal Estudiantes</p>
+                    <h1 class="text-lg md:text-xl font-black tracking-wider leading-none text-custom-primary">SUIE</h1>
+                    <p class="text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-0.5">Portal Estudiantes</p>
                 </div>
             </div>
         </div>
         
+        <!-- Lado Derecho: Modo Oscuro + Dropdown de Perfil -->
         <div class="flex items-center space-x-3 md:space-x-4">
-            <!-- BOTÓN TOGGLE MODO OSCURO -->
+            
+            <!-- Botón Alternar Modo Oscuro -->
             <button id="btn-theme-toggle" type="button" aria-label="Cambiar tema"
-                    class="p-2.5 text-slate-500 dark:text-slate-300 hover:text-[#841B44] dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700/80">
+                    class="p-2.5 text-slate-500 dark:text-slate-400 hover:text-custom-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700/80 shadow-3xs">
                 <span id="theme-icon-light" class="material-icons-round text-xl hidden dark:block text-amber-400">light_mode</span>
                 <span id="theme-icon-dark" class="material-icons-round text-xl block dark:hidden text-slate-600">dark_mode</span>
             </button>
 
-            <div class="text-right hidden sm:block border-l border-slate-200 dark:border-slate-800 pl-4">
-                <p class="text-sm font-bold text-slate-900 dark:text-slate-100">{{ auth()->user()->username ?? 'Matrícula Alumno' }}</p>
-                <p class="text-[11px] text-rose-700 dark:text-rose-400 font-bold uppercase tracking-wider mt-0.5">
-                    @yield('grupo_badge', 'Estudiante Activo')
-                </p>
+            <!-- Dropdown Unificado de Alumno -->
+            <div class="relative" id="user-menu-container">
+                <button id="btn-user-dropdown" type="button" 
+                        class="flex items-center gap-3 p-1.5 md:pr-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all cursor-pointer select-none">
+                    
+                    <div class="w-9 h-9 md:w-10 md:h-10 bg-slate-100 dark:bg-slate-800 text-custom-primary font-black rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-700 text-xs md:text-sm shrink-0 shadow-3xs">
+                        {{ strtoupper(substr(auth()->user()->username ?? 'AL', 0, 2)) }}
+                    </div>
+
+                    <div class="text-left hidden sm:block">
+                        <p class="text-xs md:text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight">
+                            {{ auth()->user()->username ?? 'Alumno' }}
+                        </p>
+                        <p class="text-[10px] text-custom-primary font-bold uppercase tracking-wider">
+                            @yield('grupo_badge', 'Estudiante Activo')
+                        </p>
+                    </div>
+
+                    <span class="material-icons-round text-base text-slate-400 hidden sm:block">expand_more</span>
+                </button>
+
+                <!-- Menú Desplegable -->
+                <div id="user-dropdown-menu" 
+                     class="hidden absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2 space-y-1.5 z-50">
+                    
+                    <div class="px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700/60">
+                        <p class="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider">Matrícula Escolar</p>
+                        <p class="text-xs font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">{{ auth()->user()->username ?? 'Sin matrícula' }}</p>
+                        <span class="inline-block mt-1 px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-rose-50 dark:bg-rose-950/60 text-custom-primary border border-rose-200 dark:border-rose-900/60">
+                            Rol: Estudiante
+                        </span>
+                    </div>
+
+                    <form action="{{ route('logout') }}" method="POST">
+                        @csrf
+                        <button type="submit" 
+                                class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer">
+                            <span class="material-icons-round text-base">logout</span>
+                            <span>Cerrar Sesión</span>
+                        </button>
+                    </form>
+                </div>
             </div>
 
-            <div class="w-9 h-9 md:w-10 md:h-10 bg-rose-50 dark:bg-rose-950/50 text-[#841B44] dark:text-rose-300 rounded-xl flex items-center justify-center font-black border border-rose-200 dark:border-rose-900/60 text-xs md:text-sm shrink-0 select-none shadow-3xs">
-                ST
-            </div>
         </div>
     </header>
 
@@ -135,29 +192,36 @@
         <div id="sidebar-overlay" class="fixed inset-0 bg-slate-950/50 backdrop-blur-xs z-30 transition-opacity duration-300 opacity-0 pointer-events-none md:hidden"></div>
         
         <!-- SIDEBAR -->
-        <aside id="sidebar-menu" class="fixed md:static top-16 md:top-18 bottom-0 left-0 w-68 bg-slate-900 dark:bg-slate-950 text-slate-300 flex flex-col h-[calc(100vh-4rem)] md:h-full shrink-0 border-r border-slate-800 dark:border-slate-800/80 z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out justify-between">
+        <aside id="sidebar-menu" 
+               class="fixed md:static top-16 md:top-18 bottom-0 left-0 w-72 bg-slate-900 dark:bg-slate-950 text-slate-300 flex flex-col h-[calc(100vh-4rem)] md:h-full shrink-0 border-r border-slate-800 dark:border-slate-800/80 z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
             
-            <div class="p-4 space-y-7 overflow-y-auto flex-1">
+            <div class="p-4 space-y-6 overflow-y-auto flex-1">
                 
-                <!-- SECCIÓN GENERAL -->
+                <!-- SECCIÓN 1: GENERAL -->
                 <div>
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 block mb-2.5">General</span>
-                    <nav class="space-y-1.5">
-                        <a href="{{ route('indexalumnos.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-colors {{ request()->routeIs('indexalumnos.index') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100' }}">
-                            <span class="material-icons-round text-base">dashboard</span> Panel de Inicio
+                    <nav class="space-y-1">
+                        <a href="{{ route('indexalumnos.index') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('indexalumnos.index') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
+                            <span class="material-icons-round text-base">dashboard</span>
+                            <span>Panel de Inicio</span>
                         </a>
                     </nav>
                 </div>
 
-                <!-- SECCIÓN SERVICIOS ESCOLARES -->
+                <!-- SECCIÓN 2: SERVICIOS ESCOLARES -->
                 <div>
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 block mb-2.5">Servicios Escolares</span>
-                    <nav class="space-y-1.5">
-                        <a href="{{ route('indexmaterias.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-colors {{ request()->routeIs('indexmaterias.index') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100' }}">
-                            <span class="material-icons-round text-base">auto_stories</span> Mis Materias
+                    <nav class="space-y-1">
+                        <a href="{{ route('indexmaterias.index') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('indexmaterias.index') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
+                            <span class="material-icons-round text-base">auto_stories</span>
+                            <span>Mis Materias</span>
                         </a>
-                        <a href="{{ route('alumnoPagos.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-colors {{ request()->routeIs('alumnoPagos.index') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100' }}">
-                            <span class="material-icons-round text-base">payments</span> Control de Pagos
+                        <a href="{{ route('alumnoPagos.index') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('alumnoPagos.index') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
+                            <span class="material-icons-round text-base">payments</span>
+                            <span>Control de Pagos</span>
                         </a>
 
                         @php
@@ -191,13 +255,17 @@
 
                         <!-- 1. MÓDULO: PROYECTOS DE TITULACIÓN (Solo 6to Semestre) -->
                         @if($semestreAlumno >= 6)
-                            <a href="{{ route('titulacion.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-colors {{ request()->routeIs('titulacion.*') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100' }}">
-                                <span class="material-icons-round text-base">history_edu</span> Proyectos de Titulación
+                            <a href="{{ route('titulacion.index') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('titulacion.*') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
+                                <span class="material-icons-round text-base">history_edu</span>
+                                <span>Proyectos de Titulación</span>
                             </a>
                         @else
-                            <button type="button" onclick="mostrarAlertaBloqueo('ModuloBloqueadoSemestre')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-800/50 dark:hover:bg-slate-900/50 hover:text-slate-400 transition-colors cursor-pointer">
+                            <button type="button" onclick="mostrarAlertaBloqueo('ModuloBloqueadoSemestre')" 
+                                    class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-800/50 dark:hover:bg-slate-900/50 hover:text-slate-400 transition-colors cursor-pointer">
                                 <div class="flex items-center gap-3">
-                                    <span class="material-icons-round text-base">history_edu</span> Proyectos de Titulación
+                                    <span class="material-icons-round text-base">history_edu</span>
+                                    <span>Proyectos de Titulación</span>
                                 </div>
                                 <span class="material-icons-round text-sm text-amber-500">lock</span>
                             </button>
@@ -205,13 +273,17 @@
 
                         <!-- 2. MÓDULO: PROCESO DE TITULACIÓN (Solo si el Proyecto está Aprobado) -->
                         @if($procesoHabilitado)
-                            <a href="{{ route('proceso.titulacion.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-colors {{ request()->routeIs('proceso.titulacion.*') ? 'bg-[#841B44] text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100' }}">
-                                <span class="material-icons-round text-base">assignment_turned_in</span> Proceso de Titulación
+                            <a href="{{ route('proceso.titulacion.index') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('proceso.titulacion.*') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
+                                <span class="material-icons-round text-base">assignment_turned_in</span>
+                                <span>Proceso de Titulación</span>
                             </a>
                         @else
-                            <button type="button" onclick="mostrarAlertaBloqueo('ModuloBloqueadoProyecto')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-800/50 dark:hover:bg-slate-900/50 hover:text-slate-400 transition-colors cursor-pointer">
+                            <button type="button" onclick="mostrarAlertaBloqueo('ModuloBloqueadoProyecto')" 
+                                    class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-800/50 dark:hover:bg-slate-900/50 hover:text-slate-400 transition-colors cursor-pointer">
                                 <div class="flex items-center gap-3">
-                                    <span class="material-icons-round text-base">assignment_turned_in</span> Proceso de Titulación
+                                    <span class="material-icons-round text-base">assignment_turned_in</span>
+                                    <span>Proceso de Titulación</span>
                                 </div>
                                 <span class="material-icons-round text-sm text-amber-500">lock</span>
                             </button>
@@ -220,27 +292,17 @@
                     </nav>
                 </div>
             </div>
-
-            <!-- FOOTER SIDEBAR -->
-            <div class="p-4 border-t border-slate-800 dark:border-slate-800/80 bg-slate-950/40 shrink-0">
-                <form action="{{ route('logout') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-bold text-rose-400 hover:bg-rose-950/30 rounded-xl transition-all cursor-pointer">
-                        <span class="material-icons-round text-base">logout</span> Cerrar Sesión
-                    </button>
-                </form>
-            </div>
         </aside>
 
         <!-- CONTENEDOR PRINCIPAL DINÁMICO -->
-        <main class="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900/60 w-full transition-colors duration-200">
+        <main class="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 w-full transition-colors duration-200">
             @yield('content')
         </main>
 
     </div>
 
     <!-- MODAL DE ALERTA DE MÓDULO BLOQUEADO -->
-    <div id="modalBloqueo" class="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+    <div id="modalBloqueo" class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden p-6 md:p-7 text-center space-y-4 border border-slate-100 dark:border-slate-800 transition-colors duration-200">
             <div class="w-14 h-14 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center mx-auto border border-amber-100 dark:border-amber-900/60 shadow-3xs">
                 <span class="material-icons-round text-3xl">lock</span>
@@ -251,7 +313,8 @@
                 <p id="mensajeBloqueo" class="text-xs md:text-sm text-slate-500 dark:text-slate-400 leading-relaxed"></p>
             </div>
 
-            <button onclick="cerrarAlertaBloqueo()" class="w-full py-3 bg-[#841B44] hover:bg-[#681535] dark:bg-rose-800 dark:hover:bg-rose-700 text-white font-bold rounded-2xl transition-colors cursor-pointer text-sm shadow-xs">
+            <button type="button" onclick="cerrarAlertaBloqueo()" 
+                    class="w-full py-3 bg-custom-primary hover:bg-custom-primary-hover text-white font-extrabold rounded-2xl transition-all cursor-pointer text-xs md:text-sm shadow-xs">
                 Entendido
             </button>
         </div>
@@ -260,7 +323,7 @@
     <!-- SCRIPTS DE CONTROL -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Sidebar móvil
+            // 1. Sidebar móvil
             const btnToggle = document.getElementById('btn-toggle-sidebar');
             const sidebar = document.getElementById('sidebar-menu');
             const overlay = document.getElementById('sidebar-overlay');
@@ -276,7 +339,24 @@
                 overlay.addEventListener('click', toggleSidebar);
             }
 
-            // Alternar Modo Oscuro
+            // 2. Dropdown de Perfil
+            const userBtn = document.getElementById('btn-user-dropdown');
+            const userMenu = document.getElementById('user-dropdown-menu');
+
+            if (userBtn && userMenu) {
+                userBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    userMenu.classList.toggle('hidden');
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (!userMenu.contains(e.target) && !userBtn.contains(e.target)) {
+                        userMenu.classList.add('hidden');
+                    }
+                });
+            }
+
+            // 3. Alternar Modo Oscuro con persistencia
             const btnTheme = document.getElementById('btn-theme-toggle');
             if (btnTheme) {
                 btnTheme.addEventListener('click', function () {
@@ -284,10 +364,8 @@
                     const selectedTheme = isDark ? 'dark' : 'light';
                     const userKey = 'suie_theme_u_{{ auth()->id() ?? "guest" }}';
 
-                    // 1. Guardar en localStorage bajo la clave del usuario
                     localStorage.setItem(userKey, selectedTheme);
 
-                    // 2. Guardar en la base de datos de manera asíncrona
                     @if(auth()->check())
                         fetch("{{ route('usuario.actualizar-tema') }}", {
                             method: 'PATCH',
@@ -301,6 +379,17 @@
                     @endif
                 });
             }
+
+            // 4. Tecla Escape para cerrar modales y menús
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (userMenu) userMenu.classList.add('hidden');
+                    cerrarAlertaBloqueo();
+                    if (sidebar && !sidebar.classList.contains('-translate-x-full') && window.innerWidth < 768) {
+                        toggleSidebar();
+                    }
+                }
+            });
         });
 
         function mostrarAlertaBloqueo(tipo) {
@@ -320,9 +409,9 @@
         }
 
         function cerrarAlertaBloqueo() {
-            document.getElementById('modalBloqueo').classList.add('hidden');
+            const modal = document.getElementById('modalBloqueo');
+            if (modal) modal.classList.add('hidden');
         }
     </script>
-
 </body>
 </html>
