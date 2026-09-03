@@ -64,8 +64,9 @@
         .text-custom-primary { color: var(--color-primary) !important; }
         .border-custom-primary { border-color: var(--color-primary) !important; }
         .hover\:bg-custom-primary-hover:hover { background-color: var(--color-primary-hover) !important; color: #ffffff !important; }
+        .bg-custom-light { background-color: var(--color-primary-light) !important; }
 
-        /* 3. Sobrescritura para elementos (excluyendo fondos de layout) */
+        /* 3. Sobrescritura para selectores fijos existentes */
         button[class*="bg-[#841B44]"],
         a[class*="bg-[#841B44]"],
         span[class*="bg-[#841B44]"],
@@ -100,7 +101,6 @@
             color: var(--color-primary) !important;
         }
 
-        /* Solo pills pequeños cambian a color light */
         span[class*="bg-rose-50"],
         div[class*="bg-rose-50"]:not(main):not(section):not(body) {
             background-color: var(--color-primary-light) !important;
@@ -146,7 +146,7 @@
                 <span id="theme-icon-dark" class="material-icons-round text-xl block dark:hidden text-slate-600">dark_mode</span>
             </button>
 
-            <!-- Dropdown Unificado de Perfil y Acciones -->
+            <!-- Dropdown de Perfil -->
             <div class="relative" id="user-menu-container">
                 <button id="btn-user-dropdown" type="button" 
                         class="flex items-center gap-3 p-1.5 md:pr-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all cursor-pointer select-none">
@@ -171,7 +171,6 @@
                 <div id="user-dropdown-menu" 
                      class="hidden absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2 space-y-1.5 z-50">
                     
-                    <!-- Datos de la cuenta -->
                     <div class="px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700/60">
                         <p class="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider">Sesión iniciada como</p>
                         <p class="text-xs font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">{{ auth()->user()->username ?? 'ADMIN' }}</p>
@@ -180,7 +179,22 @@
                         </span>
                     </div>
 
-                    <!-- Botón Cerrar Sesión -->
+                    @if(Route::has('admin.google-auth.index'))
+                        <a href="{{ route('admin.google-auth.index') }}" 
+                           class="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                            <span class="material-icons-round text-base text-custom-primary">security</span>
+                            <span>Configurar Google OAuth</span>
+                        </a>
+                    @endif
+
+                    @if(Route::has('2fa.setup'))
+                        <a href="{{ route('2fa.setup') }}" 
+                           class="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                            <span class="material-icons-round text-base text-custom-primary">phonelink_lock</span>
+                            <span>Google Authenticator (2FA)</span>
+                        </a>
+                    @endif
+
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
                         <button type="submit" 
@@ -206,7 +220,7 @@
             
             <div class="p-4 space-y-6 overflow-y-auto flex-1">
                 
-                <!-- SECCIÓN 1: SEGURIDAD -->
+                <!-- SECCIÓN 1: SEGURIDAD Y ACCESOS -->
                 <div>
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 block mb-2.5">Control de Accesos</span>
                     <nav class="space-y-1">
@@ -215,6 +229,14 @@
                             <span class="material-icons-round text-base">supervised_user_circle</span>
                             <span>Control de Usuarios</span>
                         </a>
+
+                        @if(Route::has('admin.google-auth.index'))
+                            <a href="{{ route('admin.google-auth.index') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('admin.google-auth.*') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
+                                <span class="material-icons-round text-base">key</span>
+                                <span>Google OAuth & Dominios</span>
+                            </a>
+                        @endif
                     </nav>
                 </div>
 

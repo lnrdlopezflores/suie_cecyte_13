@@ -23,6 +23,9 @@ use App\Http\Controllers\JuradosController;
 use App\Http\Controllers\ColoresController;
 use App\Http\Controllers\CoordinacionDashboardController;
 use App\Http\Controllers\UsuarioPreferenciaController;
+use App\Http\Controllers\GoogleAuthController;
+use App\Http\Controllers\GoogleAuthConfigController;
+use App\Http\Controllers\TwoFactorController;
 
 
 Route::get('/', function () {
@@ -33,6 +36,16 @@ Route::get('/login', [LoginController::class, 'redirectByRol'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.post');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::middleware('auth')->patch('/usuario/preferencia-tema', [UsuarioPreferenciaController::class, 'actualizarTema'])->name('usuario.actualizar-tema');
+Route::get('/auth/google', [GoogleAuthController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
+Route::get('/2fa/verificar', [TwoFactorController::class, 'showChallenge'])->name('2fa.challenge');
+Route::post('/2fa/verificar', [TwoFactorController::class, 'verifyChallenge'])->name('2fa.verify');
+
+Route::middleware(['auth'])->prefix('cuenta/seguridad')->group(function () {
+    Route::get('/google-authenticator', [TwoFactorController::class, 'showSetup'])->name('2fa.setup');
+    Route::post('/google-authenticator/activar', [TwoFactorController::class, 'enable'])->name('2fa.enable');
+    Route::post('/google-authenticator/desactivar', [TwoFactorController::class, 'disable'])->name('2fa.disable');
+});
 
 Route::middleware(['auth', 'rol:administrador'])->group(function () {
     Route::resource('/admon/usuarios', UsuarioController::class)->names('usuarios');
@@ -44,6 +57,8 @@ Route::middleware(['auth', 'rol:administrador'])->group(function () {
     Route::get('/configuracion/colores', [ColoresController::class, 'index'])->name('admin.colores.index');
     Route::post('/configuracion/colores', [ColoresController::class, 'store'])->name('admin.colores.store');
     Route::patch('/admon/usuarios/{id}/password', [UsuarioController::class, 'updatePassword'])->name('usuarios.update-password');
+    Route::get('/google-auth', [GoogleAuthConfigController::class, 'index'])->name('admin.google-auth.index');
+    Route::post('/google-auth', [GoogleAuthConfigController::class, 'update'])->name('admin.google-auth.update');
 });
 
 Route::middleware(['auth', 'rol:Estudiante'])->group(function () {

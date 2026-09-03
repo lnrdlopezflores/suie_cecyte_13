@@ -13,67 +13,79 @@ class CargaAcademicaController
     /**
      * Lista toda la planeación de la carga académica institucional (Descifrado de docentes).
      */
-    public function index(Request $request)
-    {
-        $buscar = $request->input('buscar');
+public function index(Request $request)
+{
+    $buscar = $request->input('buscar');
 
-        // Construcción de la query relacional unificada
-        $query = DB::table('carga_academica')
-            ->join('docentes', 'carga_academica.docente_id', '=', 'docentes.id')
-            ->join('usuarios', 'docentes.usuario_id', '=', 'usuarios.id') 
-            ->join('materias', 'carga_academica.materia_id', '=', 'materias.id')
-            ->join('grupos', 'carga_academica.grupo_id', '=', 'grupos.id')
-            ->select(
-                'carga_academica.id as carga_id',
-                'carga_academica.aula',
-                'carga_academica.horario',
-                'docentes.nombre as docente_nombre',
-                'docentes.apellido_paterno as docente_apellido',
-                'usuarios.username', // Clave de empleado (Texto plano)
-                'materias.nombre as materia_nombre',
-                'materias.clave',
-                'grupos.semestre',
-                'grupos.grupo'
-            );
+    // 1. Consulta base uniendo cargas, materias, grupos, docentes y usuarios
+    $query = DB::table('carga_academica')
+        ->join('docentes', 'carga_academica.docente_id', '=', 'docentes.id')
+        ->join('usuarios', 'docentes.usuario_id', '=', 'usuarios.id')
+        ->join('materias', 'carga_academica.materia_id', '=', 'materias.id')
+        ->join('grupos', 'carga_academica.grupo_id', '=', 'grupos.id')
+        ->where('usuarios.activo', 1) // SOLO DOCENTES ACTIVOS
+        ->select(
+            'carga_academica.*',
+            'docentes.id as docente_id',
+            'docentes.nombre as docente_nombre',
+            'docentes.apellido_paterno as docente_apellido',
+            'docentes.correo as docente_correo',
+            'usuarios.username',
+            'materias.nombre as materia_nombre',
+            'materias.clave',
+            'materias.horas_semanales',
+            'grupos.semestre',
+            'grupos.grupo',
+            'grupos.especialidad'
+        );
 
-        // Ajustamos la búsqueda: Se remueve el LIKE de campos de texto de docentes ya que están cifrados.
-        // Ahora busca de forma indexada por Clave de Empleado, Materia o Aula.
-        if (!empty($buscar)) {
-            $query->where(function ($q) use ($buscar) {
-                $q->where('usuarios.username', 'LIKE', '%' . $buscar . '%')
-                  ->orWhere('materias.nombre', 'LIKE', '%' . $buscar . '%')
-                  ->orWhere('carga_academica.aula', 'LIKE', '%' . $buscar . '%');
-            });
-        }
-
-        // Paginación estable ordenando por ID o semestre
-        $cargasPaginadas = $query->orderBy('grupos.semestre', 'asc')
-                                 ->orderBy('carga_academica.id', 'desc')
-                                 ->paginate(15);
-
-        // Iteramos la colección para descifrar la identidad del docente en tiempo de ejecución
-        // En CargaAcademicaController.php -> index()
-
-$cargasPaginadas->getCollection()->transform(function ($carga) {
-    try {
-        // Validamos si el nombre del docente parece estar encriptado en Base64 (empieza con 'ey' y es largo)
-        if (is_string($carga->docente_nombre) && (strpos($carga->docente_nombre, 'ey') === 0 || strlen($carga->docente_nombre) > 50)) {
-            $carga->docente_nombre   = decrypt($carga->docente_nombre);
-            $carga->docente_apellido = decrypt($carga->docente_apellido);
-        } else {
-            // Si es texto plano (Legacy), evitamos llamar a decrypt()
-            $carga->docente_nombre = $carga->docente_nombre . ' (Plain)';
-        }
-    } catch (\Throwable $e) {
-        // Atrapamos Throwable para evitar el crash de unserialize() en PHP 8.3
-        $carga->docente_nombre = $carga->docente_nombre . ' (Plain)';
+    // 2. Filtro de búsqueda
+    if (!empty($buscar)) {
+        $query->where(function($q) use ($buscar) {
+            $q->where('materias.nombre', 'LIKE', "%{$buscar}%")
+              ->orWhere('materias.clave', 'LIKE', "%{$buscar}%")
+              ->orWhere('carga_academica.aula', 'LIKE', "%{$buscar}%")
+              ->orWhere('usuarios.username', 'LIKE', "%{$buscar}%");
+        });
     }
 
-    return $carga;
-});
+    $cargasRaw = $query->orderBy('grupos.semestre', 'asc')->get();
 
-        return view('cpanel/ConEscolar/indexcarga', ['cargas' => $cargasPaginadas]);
-    }
+    // 3. Descifrar y agrupar por cada profesor
+    $docentesConCarga = $cargasRaw->groupBy('docente_id')->map(function ($items) {
+        $primerItem = $items->first();
+        
+        $nom = $primerItem->docente_nombre;
+        $pat = $primerItem->docente_apellido;
+        $cor = $primerItem->docente_correo;
+
+        try {
+            if (is_string($nom) && (str_starts_with($nom, 'ey') || strlen($nom) > 50)) $nom = decrypt($nom);
+            if (is_string($pat) && (str_starts_with($pat, 'ey') || strlen($pat) > 50)) $pat = decrypt($pat);
+            if (is_string($cor) && (str_starts_with($cor, 'ey') || strlen($cor) > 50)) $cor = decrypt($cor);
+        } catch (\Throwable $e) {
+            $nom = str_replace(' (Plain)', '', $nom);
+            $pat = str_replace(' (Plain)', '', $pat);
+            $cor = str_replace(' (Plain)', '', $cor);
+        }
+
+        return (object) [
+            'docente_id'      => $primerItem->docente_id,
+            'docente_nombre'  => $nom,
+            'docente_apellido'=> $pat,
+            'nombre_completo' => trim("$pat $nom"),
+            'username'        => $primerItem->username,
+            'correo'          => $cor,
+            'total_materias'  => $items->count(),
+            'total_horas'     => $items->sum('horas_semanales'),
+            'materias'        => $items
+        ];
+    });
+
+    $totalAsignaciones = $cargasRaw->count();
+
+    return view('cpanel/ConEscolar/indexcarga', compact('docentesConCarga', 'totalAsignaciones'));
+}
 
     public function create()
     {

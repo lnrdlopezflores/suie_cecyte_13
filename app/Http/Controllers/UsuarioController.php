@@ -22,15 +22,17 @@ class UsuarioController extends Controller
     private function cargarVista()
     {
         $usuarios = DB::table('usuarios')
-            ->leftJoin('alumnos', 'usuarios.id', '=', 'alumnos.usuario_id')
-            ->leftJoin('docentes', 'usuarios.id', '=', 'docentes.usuario_id')
-            ->select(
-                'usuarios.*',
-                DB::raw('COALESCE(alumnos.nombre, docentes.nombre) as nombre'),
-                DB::raw('COALESCE(alumnos.apellido_paterno, docentes.apellido_paterno) as apellido_paterno')
-            )
-            ->orderBy('usuarios.id', 'desc')
-            ->paginate(10);
+        ->leftJoin('alumnos', 'usuarios.id', '=', 'alumnos.usuario_id')
+        ->leftJoin('docentes', 'usuarios.id', '=', 'docentes.usuario_id')
+        ->leftJoin('administrador', 'usuarios.id', '=', 'administrador.usuario_id')
+        ->select(
+            'usuarios.*',
+            DB::raw('COALESCE(alumnos.nombre, docentes.nombre, administrador.nombre) as nombre'),
+            DB::raw('COALESCE(alumnos.apellido_paterno, docentes.apellido_paterno, administrador.apaterno) as apellido_paterno'),
+            DB::raw('COALESCE(alumnos.apellido_materno, docentes.apellido_materno, administrador.amaterno) as apellido_materno')
+        )
+        ->orderBy('usuarios.id', 'desc')
+        ->paginate(10);
 
         return view('cpanel.usuarios.createusuario', compact('usuarios'));
     }
@@ -38,57 +40,59 @@ class UsuarioController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'username'         => ['required', 'string', 'max:50', 'unique:usuarios,username'],
-            'password'         => ['required', 'string', 'min:6'],
-            'rol'              => ['required', 'string', 'in:Estudiante,Docente,Orientador,Control Escolar,Coordinador,administrador'],
-            'nombre'           => ['required', 'string', 'max:150'],
-            'apellido_paterno' => ['required', 'string', 'max:150'],
-            'apellido_materno' => ['nullable', 'string', 'max:150'],
-            'nombre_tutor'     => ['nullable', 'string', 'max:200'],
-            'telefono_tutor'   => ['nullable', 'string', 'max:50'],
-            'correo'           => ['nullable', 'email', 'max:150'],
-            'telefono'         => ['nullable', 'string', 'max:50'],
+            'username' => 'required|string|unique:usuarios,username',
+            'password' => 'required|string|min:6',
+            'rol'      => 'required|string',
         ]);
 
         DB::transaction(function () use ($request) {
-            $rol = $request->input('rol');
-
             $usuarioId = DB::table('usuarios')->insertGetId([
-                'username'   => $request->input('username'),
-                'password'   => Hash::make($request->input('password')),
-                'rol'        => $rol,
+                'username'   => trim($request->username),
+                'password'   => bcrypt($request->password),
+                'rol'        => $request->rol,
                 'activo'     => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
-            $nombreCifrado  = encrypt($request->input('nombre'));
-            $paternoCifrado = encrypt($request->input('apellido_paterno'));
-            $maternoCifrado = $request->filled('apellido_materno') ? encrypt($request->input('apellido_materno')) : null;
+            $rolLimpio = strtolower(trim($request->rol));
 
-            if ($rol === 'Estudiante') {
+            // 1. Expediente Alumno
+            if ($rolLimpio === 'estudiante') {
                 DB::table('alumnos')->insert([
                     'usuario_id'       => $usuarioId,
-                    'grupo_id'         => null,
-                    'nombre'           => $nombreCifrado,
-                    'apellido_paterno' => $paternoCifrado,
-                    'apellido_materno' => $maternoCifrado,
-                    'nombre_tutor'     => $request->filled('nombre_tutor') ? encrypt($request->input('nombre_tutor')) : null,
-                    'telefono_tutor'   => $request->filled('telefono_tutor') ? encrypt($request->input('telefono_tutor')) : null,
+                    'nombre'           => $request->nombre,
+                    'apellido_paterno' => $request->apellido_paterno,
+                    'apellido_materno' => $request->apellido_materno,
+                    'nombre_tutor'     => $request->nombre_tutor,
+                    'telefono_tutor'   => $request->telefono_tutor,
+                    'activo'           => 1,
                 ]);
-            } elseif ($rol === 'Docente') {
+            }
+            // 2. Expediente Docente
+            elseif ($rolLimpio === 'docente') {
                 DB::table('docentes')->insert([
                     'usuario_id'       => $usuarioId,
-                    'nombre'           => $nombreCifrado,
-                    'apellido_paterno' => $paternoCifrado,
-                    'apellido_materno' => $maternoCifrado,
-                    'correo'           => $request->filled('correo') ? encrypt($request->input('correo')) : null,
-                    'telefono'         => $request->filled('telefono') ? encrypt($request->input('telefono')) : null,
+                    'nombre'           => $request->nombre,
+                    'apellido_paterno' => $request->apellido_paterno,
+                    'apellido_materno' => $request->apellido_materno,
+                    'correo'           => $request->correo,
+                    'telefono'         => $request->telefono,
+                    'activo'           => 1,
+                ]);
+            }
+            // 3. Expediente Administrador (columnas: nombre, apaterno, amaterno, usuario_id)
+            elseif ($rolLimpio === 'administrador') {
+                DB::table('administrador')->insert([
+                    'usuario_id' => $usuarioId,
+                    'nombre'     => $request->nombre,
+                    'apaterno'   => $request->apellido_paterno,
+                    'amaterno'   => $request->apellido_materno,
                 ]);
             }
         });
 
-        return redirect()->back()->with('success', 'Usuario y expediente registrados exitosamente.');
+        return redirect()->route('usuarios.index')->with('success', 'Usuario y expediente registrados correctamente.');
     }
 
     /**

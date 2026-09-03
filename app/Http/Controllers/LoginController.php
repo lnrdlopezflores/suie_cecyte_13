@@ -5,13 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\DB; // <-- AÑADE ESTA LÍNEA
-
+use Illuminate\Support\Facades\DB;
 
 class LoginController extends Controller
 {
     /**
-     * Procesar el inicio de sesión y redireccionar según el Rol.
+     * Procesar el inicio de sesión y redireccionar según el Rol o solicitar 2FA.
      */
     public function login(Request $request)
     {
@@ -32,57 +31,78 @@ class LoginController extends Controller
                 ]);
             }
 
-            // 3. Si está activo, intentar autenticar con las credenciales completas
+            // 3. Si está activo, intentar autenticar con las credenciales
             if (Auth::attempt(['username' => $credentials['username'], 'password' => $credentials['password']])) {
                 
-                $request->session()->regenerate();
                 $userAuth = Auth::user();
 
-                // 4. Redirección por Match de Rol
-                return match ($userAuth->rol) {
-                    'Coordinador'     => redirect()->route('coordinador.dashboard'),
-                    'Orientador'      => redirect()->route('orientacion.asistencias'),
-                    'Control Escolar' => redirect()->route('alumnos.index'),
-                    'Docente'         => redirect()->route('dashboardDocente.index'),
-                    'Estudiante'      => redirect()->route('indexalumnos.index'),
-                    'administrador'   => redirect()->route('usuarios.index'),
-                    default           => redirect()->to('/'),
-                };
+                // =====================================================================
+                // 4. INTERCEPTOR GOOGLE AUTHENTICATOR (2FA)
+                // =====================================================================
+                if (!empty($userAuth->google2fa_enabled) && $userAuth->google2fa_enabled) {
+                    // Desconectar sesión momentánea de Laravel
+                    Auth::logout();
+
+                    // Guardar ID temporal en sesión para validar el código de 6 dígitos
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+                    $request->session()->put('2fa_user_id', $userAuth->id);
+
+                    // Redirigir a la pantalla del código OTP
+                    return redirect()->route('2fa.challenge');
+                }
+
+                // Si NO tiene 2FA activo, marcar como completado
+                $request->session()->regenerate();
+                $request->session()->put('2fa_passed', true);
+
+                // 5. Redirección por Match de Rol
+                return $this->getRedireccionPorRol($userAuth->rol);
             }
         }
 
-        // 5. Si no existe el usuario o la contraseña es errónea
+        // 6. Si no existe el usuario o la contraseña es errónea
         throw ValidationException::withMessages([
             'username' => ['La clave de usuario o contraseña introducida es incorrecta.'],
         ]);
     }
 
+    /**
+     * Redirige al panel correspondiente si ya está autenticado.
+     */
     public function redirectByRol()
     {
-        // Si el usuario ya está autenticado, hacemos el Match de redirección
         if (Auth::check()) {
-            return match (Auth::user()->rol) {
-                'Coordinador'     => redirect()->route('coordinador.dashboard'),
-                'Orientador'      => redirect()->route('orientacion.asistencias'),
-                'Control Escolar' => redirect()->route('alumnos.index'),
-                'Docente'         => redirect()->route('dashboardDocente.index'),
-                'Estudiante'      => redirect()->route('indexalumnos.index'),
-                'administrador'   => redirect()->route('usuarios.index'),
-                default           => redirect()->to('/'),
-            };
+            return $this->getRedireccionPorRol(Auth::user()->rol);
         }
 
-        // Si es un invitado (no está logueado), lo mandamos a la landing page principal
         return redirect()->to('/');
     }
 
     /**
-     * Cerrar sesión del sistema.
+     * Auxiliar centralizado para redirecciones de rol en SUIE.
+     */
+    private function getRedireccionPorRol(string $rol)
+    {
+        return match ($rol) {
+            'Coordinador'     => redirect()->route('coordinador.dashboard'),
+            'Orientador'      => redirect()->route('orientacion.asistencias'),
+            'Control Escolar' => redirect()->route('alumnos.index'),
+            'Docente'         => redirect()->route('dashboardDocente.index'),
+            'Estudiante'      => redirect()->route('indexalumnos.index'),
+            'administrador'   => redirect()->route('usuarios.index'),
+            default           => redirect()->to('/'),
+        };
+    }
+
+    /**
+     * Cerrar sesión del sistema y limpiar sesiones de 2FA.
      */
     public function logout(Request $request)
     {
         Auth::logout();
 
+        $request->session()->forget(['2fa_passed', '2fa_user_id']);
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
