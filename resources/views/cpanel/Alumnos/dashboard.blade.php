@@ -11,162 +11,190 @@
 @endsection
 
 @section('content')
-<main class="p-5 md:p-8 space-y-8 max-w-7xl w-full mx-auto text-sm md:text-base transition-colors duration-200">
+<main class="p-4 md:p-8 space-y-8 max-w-7xl w-full mx-auto text-sm md:text-base transition-colors duration-200">
     
     <!-- BANNER HERO DINÁMICO DE BIENVENIDA -->
-    <div class="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-900 to-slate-800 dark:from-slate-950 dark:to-slate-900 p-7 md:p-10 rounded-3xl border border-slate-800/80 shadow-xl text-white flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-        <!-- Luz ambiental en base al color institucional -->
-        <div class="absolute -right-20 -bottom-20 w-80 h-80 rounded-full bg-custom-primary opacity-20 blur-3xl pointer-events-none"></div>
+    <div class="relative overflow-hidden bg-slate-900 dark:bg-slate-950 p-7 md:p-10 rounded-3xl border border-slate-800/90 shadow-xl text-white flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <!-- Luz ambiental reactiva con la variable primaria -->
+        <div class="absolute -right-20 -bottom-20 w-96 h-96 rounded-full bg-custom-primary opacity-20 blur-3xl pointer-events-none"></div>
+        <div class="absolute top-0 right-1/3 w-64 h-64 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none"></div>
 
-        <div class="space-y-2 relative z-10">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 dark:bg-white/5 border border-white/15 text-white text-xs font-black rounded-lg uppercase tracking-wider">
-                <span class="material-icons-round text-sm text-amber-400">verified</span> Matrícula Activa
-            </span>
+        <div class="space-y-3 relative z-10">
+            <div class="flex items-center gap-2 flex-wrap">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 dark:bg-white/5 backdrop-blur-md border border-white/15 text-emerald-400 text-xs font-black rounded-xl uppercase tracking-wider">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Alumno Regular
+                </span>
+                <span class="text-xs text-slate-400 font-mono">ID: {{ auth()->user()->username }}</span>
+            </div>
+            
             <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
-                ¡Hola de nuevo, {{ $infoAlumno->nombre }}!
+                ¡Hola de nuevo, <span class="text-custom-primary">{{ $infoAlumno->nombre ?? 'Estudiante' }}</span>!
             </h2>
+            
             <p class="text-slate-300 max-w-2xl text-xs sm:text-sm md:text-base leading-relaxed font-normal">
-                Bienvenido al portal estudiantil del <strong class="text-white">SUIE</strong>. Revisa tus materias inscritas, verifica la validación de tus pagos y supervisa el dictamen de tu proyecto de titulación.
+                Bienvenido al portal estudiantil del plantel <strong class="text-white">CECyTE 13</strong>. Consulta tu carga académica, gestiona tus comprobantes bancarios y monitorea la liberación de tu proceso de titulación.
             </p>
         </div>
 
-        <div class="shrink-0 bg-white/10 dark:bg-white/5 px-6 py-4 rounded-2xl backdrop-blur-md border border-white/15 text-center md:text-right relative z-10">
-            <p class="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Ciclo Escolar Activo</p>
-            <p class="text-lg md:text-xl font-black text-white font-mono mt-0.5">2026 - 2027</p>
-            <span class="text-[11px] text-slate-400 font-semibold block mt-0.5">CECyTE 13 Tepetitla</span>
+        <!-- Indicador Ciclo Escolar -->
+        <div class="shrink-0 bg-white/10 dark:bg-white/5 p-5 md:p-6 rounded-3xl backdrop-blur-md border border-white/15 text-center md:text-right relative z-10 space-y-1">
+            <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Ciclo Escolar</span>
+            <p class="text-xl md:text-2xl font-black text-white font-mono tracking-tight">2026 - 2027</p>
+            <div class="flex items-center justify-center md:justify-end gap-1.5 text-xs text-slate-300 font-medium pt-1">
+                <span class="material-icons-round text-sm text-custom-primary">location_on</span>
+                <span>Tepetitla, Tlax.</span>
+            </div>
         </div>
     </div>
 
     <!-- TARJETAS DE INDICADORES RÁPIDOS (KPIs) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         
-        <!-- Estatus Académico -->
-        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-5">
-            <div class="w-13 h-13 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 rounded-2xl flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-900/60 shadow-3xs">
-                <span class="material-icons-round text-2xl">auto_stories</span>
+        <!-- 1. Semestre y Grupo -->
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-all flex items-center gap-4">
+            <div class="w-12 h-12 bg-custom-light text-custom-primary rounded-2xl flex items-center justify-center shrink-0 border border-custom-primary/30 shadow-3xs">
+                <span class="material-icons-round text-2xl">school</span>
             </div>
             <div class="space-y-0.5">
-                <p class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-extrabold tracking-wider">Estatus Académico</p>
-                <p class="text-base font-black text-slate-900 dark:text-slate-100">Carga Regular</p>
-                <span class="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold block">Sin adeudos técnicos</span>
+                <p class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider">Carga Escolar</p>
+                <p class="text-base font-black text-slate-900 dark:text-slate-100">
+                    {{ $infoAlumno->semestre ?? 'N/A' }}° Semestre
+                </p>
+                <span class="text-[11px] text-custom-primary font-bold block">Grupo "{{ $infoAlumno->grupo ?? 'U' }}"</span>
             </div>
         </div>
 
-        <!-- Finanzas / Pagos -->
-        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-5">
-            <div class="w-13 h-13 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-2xl flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-900/60 shadow-3xs">
+        <!-- 2. Pagos y Finanzas -->
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-all flex items-center gap-4">
+            <div class="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center shrink-0 border border-emerald-200 dark:border-emerald-900/60 shadow-3xs">
                 <span class="material-icons-round text-2xl">payments</span>
             </div>
             <div class="space-y-1">
-                <p class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-extrabold tracking-wider">Control de Pagos</p>
-                <span class="inline-flex items-center text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs px-2.5 py-0.5 rounded-full">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Al corriente
+                <p class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider">Control Financiero</p>
+                <span class="inline-flex items-center text-emerald-700 dark:text-emerald-300 font-extrabold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Al corriente
                 </span>
             </div>
         </div>
 
-        <!-- Semestre Activo -->
-        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-5">
-            <div class="w-13 h-13 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 rounded-2xl flex items-center justify-center shrink-0 border border-amber-100 dark:border-amber-900/60 shadow-3xs">
-                <span class="material-icons-round text-2xl">grid_view</span>
+        <!-- 3. Estatus Académico -->
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-all flex items-center gap-4">
+            <div class="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center shrink-0 border border-indigo-200 dark:border-indigo-900/60 shadow-3xs">
+                <span class="material-icons-round text-2xl">verified</span>
             </div>
             <div class="space-y-0.5">
-                <p class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-extrabold tracking-wider">Semestre Activo</p>
+                <p class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider">Situación Alumno</p>
                 <p class="text-base font-black text-slate-900 dark:text-slate-100">
-                    {{ $infoAlumno->semestre ?? 'N/A' }}° Semestre
+                    {{ ($infoAlumno->estatus_egreso ?? '') === 'Egresado' ? 'Egresado' : 'Regular' }}
                 </p>
-                <span class="text-[11px] text-slate-400 dark:text-slate-500 font-mono">Grupo "{{ $infoAlumno->grupo ?? 'U' }}"</span>
+                <span class="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold block">Sin adeudos</span>
             </div>
         </div>
 
-        <!-- Estatus Matricular -->
-        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-5">
-            <div class="w-13 h-13 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-2xl flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 shadow-3xs">
-                <span class="material-icons-round text-2xl">badge</span>
+        <!-- 4. Seguridad en Dos Pasos (2FA) -->
+        @php
+            $has2FA = auth()->user()->google2fa_enabled ?? false;
+        @endphp
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-all flex items-center gap-4">
+            <div class="w-12 h-12 {{ $has2FA ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/60' : 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/60' }} rounded-2xl flex items-center justify-center shrink-0 border shadow-3xs">
+                <span class="material-icons-round text-2xl">{{ $has2FA ? 'phonelink_lock' : 'phonelink_setup' }}</span>
             </div>
-            <div class="space-y-0.5">
-                <p class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-extrabold tracking-wider">Estatus Matricular</p>
-                <p class="text-base font-black text-slate-900 dark:text-slate-100">
-                    {{ $infoAlumno->estatus_egreso === 'Egresado' ? 'Egresado' : 'Alumno Regular' }}
-                </p>
-                <span class="text-[11px] text-slate-400 dark:text-slate-500 font-mono">{{ auth()->user()->username }}</span>
+            <div class="space-y-1">
+                <p class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider">Google 2FA</p>
+                @if($has2FA)
+                    <span class="inline-flex items-center text-emerald-700 dark:text-emerald-300 font-extrabold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                        Protegido
+                    </span>
+                @else
+                    <a href="{{ route('2fa.setup') }}" class="inline-flex items-center text-amber-700 dark:text-amber-300 hover:underline font-extrabold text-[11px]">
+                        Activar ahora →
+                    </a>
+                @endif
             </div>
         </div>
 
     </div>
 
-    <!-- SECCIÓN DE CONTENIDO: TIMELINE DE TRÁMITES + ACCESOS RÁPIDOS -->
+    <!-- SECCIÓN DE CONTENIDO: TIMELINE DE TITULACIÓN + ACCESOS RÁPIDOS -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        <!-- Monitoreo del Trámite de Egreso (Timeline de 2 Columnas) -->
-        <div class="lg:col-span-8 bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-7">
+        <!-- RUTA DE EGRESO Y TITULACIÓN (TIMELINE) -->
+        <div class="lg:col-span-8 bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-7 transition-colors">
+            
             <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-slate-100 dark:border-slate-800 gap-2">
-                <div class="space-y-1">
-                    <h3 class="text-base md:text-lg font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                        <span class="material-icons-round text-xl text-custom-primary">assignment_ind</span> 
-                        Ruta de Egreso y Titulación
+                <div>
+                    <div class="flex items-center gap-2 text-custom-primary text-xs font-black uppercase tracking-widest mb-1">
+                        <span class="material-icons-round text-base">timeline</span>
+                        <span>Progreso Académico</span>
+                    </div>
+                    <h3 class="text-base md:text-lg font-black text-slate-900 dark:text-slate-100">
+                        Ruta de Titulación y Egreso
                     </h3>
-                    <p class="text-slate-500 dark:text-slate-400 text-xs md:text-sm">Requisitos para la habilitación de los módulos de titulación y examen profesional.</p>
                 </div>
+                <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">Requisitos para recepción profesional</span>
             </div>
 
-            <div class="space-y-6">
+            <div class="space-y-8">
                 @php
-                    $faseFinalHabilitada = isset($infoAlumno->semestre) && ($infoAlumno->semestre >= 6 || $infoAlumno->estatus_egreso === 'Egresado');
+                    $faseFinalHabilitada = isset($infoAlumno->semestre) && ($infoAlumno->semestre >= 6 || ($infoAlumno->estatus_egreso ?? '') === 'Egresado');
                     $proyectoAprobado = isset($infoAlumno->proyecto_aprobado) && $infoAlumno->proyecto_aprobado == true;
                 @endphp
 
-                <!-- Paso 1: Habilitación por Semestre -->
-                <div class="flex items-start gap-4">
+                <!-- Paso 1: Fase Terminal (6° Semestre) -->
+                <div class="flex items-start gap-4 sm:gap-6">
                     <div class="flex flex-col items-center">
-                        <div class="w-9 h-9 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 shadow-3xs {{ $faseFinalHabilitada ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700' }}">
+                        <div class="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-xs shrink-0 shadow-2xs {{ $faseFinalHabilitada ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700' }}">
                             @if($faseFinalHabilitada)
                                 <span class="material-icons-round text-lg">check</span>
                             @else
-                                1
+                                01
                             @endif
                         </div>
-                        <div class="w-0.5 h-12 bg-slate-200 dark:bg-slate-800 my-1"></div>
+                        <div class="w-0.5 h-14 bg-slate-200 dark:bg-slate-800 my-1"></div>
                     </div>
 
-                    <div class="space-y-1 pt-1">
-                        <div class="flex items-center gap-2">
-                            <h4 class="font-extrabold text-slate-900 dark:text-slate-100 text-sm md:text-base">1. Fase Terminal (6° Semestre)</h4>
+                    <div class="space-y-1.5 pt-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h4 class="font-extrabold text-slate-900 dark:text-slate-100 text-sm md:text-base">
+                                Inscripción a Fase Terminal (6° Semestre)
+                            </h4>
                             @if($faseFinalHabilitada)
-                                <span class="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold text-[10px] uppercase border border-emerald-200 dark:border-emerald-800">Cumplido</span>
+                                <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-black text-[10px] uppercase border border-emerald-200 dark:border-emerald-800">Habilitado</span>
                             @else
-                                <span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold text-[10px] uppercase">Pendiente</span>
+                                <span class="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-black text-[10px] uppercase">Bloqueado</span>
                             @endif
                         </div>
                         <p class="text-xs md:text-sm leading-relaxed {{ $faseFinalHabilitada ? 'text-slate-600 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500' }}">
-                            {{ $faseFinalHabilitada ? 'Inscrito en 6° semestre o egresado. El módulo para registro de proyecto se encuentra activo en tu menú lateral.' : 'Requiere estar formalmente inscrito en el 6° Semestre para cargar protocolos de titulación.' }}
+                            {{ $faseFinalHabilitada ? 'Cumples con el semestre mínimo requerido. El módulo de Proyectos de Titulación está activo en tu menú lateral.' : 'Requiere encontrarse formalmente inscrito en el 6° semestre para dar de alta el protocolo técnico.' }}
                         </p>
                     </div>
                 </div>
 
-                <!-- Paso 2: Dictamen del Jurado -->
-                <div class="flex items-start gap-4">
+                <!-- Paso 2: Dictamen del Tribunal Examinador -->
+                <div class="flex items-start gap-4 sm:gap-6">
                     <div class="flex flex-col items-center">
-                        <div class="w-9 h-9 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 shadow-3xs {{ $proyectoAprobado ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700' }}">
+                        <div class="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-xs shrink-0 shadow-2xs {{ $proyectoAprobado ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700' }}">
                             @if($proyectoAprobado)
                                 <span class="material-icons-round text-lg">check</span>
                             @else
-                                2
+                                02
                             @endif
                         </div>
                     </div>
 
-                    <div class="space-y-1 pt-1">
-                        <div class="flex items-center gap-2">
-                            <h4 class="font-extrabold text-slate-900 dark:text-slate-100 text-sm md:text-base">2. Dictamen Favorable del Jurado</h4>
+                    <div class="space-y-1.5 pt-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h4 class="font-extrabold text-slate-900 dark:text-slate-100 text-sm md:text-base">
+                                Liberación por Jurado Revisor
+                            </h4>
                             @if($proyectoAprobado)
-                                <span class="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold text-[10px] uppercase border border-emerald-200 dark:border-emerald-800">Aprobado</span>
+                                <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-black text-[10px] uppercase border border-emerald-200 dark:border-emerald-800">Aprobado</span>
                             @else
-                                <span class="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-bold text-[10px] uppercase border border-amber-200 dark:border-amber-800">En Evaluación</span>
+                                <span class="px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-black text-[10px] uppercase border border-amber-200 dark:border-amber-800">En Revisión</span>
                             @endif
                         </div>
                         <p class="text-xs md:text-sm leading-relaxed {{ $proyectoAprobado ? 'text-emerald-700 dark:text-emerald-400 font-semibold' : 'text-slate-400 dark:text-slate-500' }}">
-                            {{ $proyectoAprobado ? 'Dictamen emitido por el tribunal examinador. Tu trámite oficial de recepción profesional está disponible para entrega de expedientes.' : 'Tu proyecto se encuentra en revisión técnica o pendiente del voto aprobatorio de los 3 sínodos examinadores.' }}
+                            {{ $proyectoAprobado ? 'Dictamen favorable registrado por la mayoría de los sinodales asignados. Puedes continuar con la carga de documentos de titulación.' : 'Tu reporte final se encuentra en fase de evaluación colegiada por los 3 docentes asignados a tu carrera.' }}
                         </p>
                     </div>
                 </div>
@@ -174,59 +202,68 @@
             </div>
         </div>
 
-        <!-- Columna Lateral: Accesos Directos del Alumno -->
+        <!-- ACCESOS RÁPIDOS Y SEGURIDAD -->
         <div class="lg:col-span-4 space-y-6">
-            <div class="bg-white dark:bg-slate-900 p-6 md:p-7 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
+            
+            <div class="bg-white dark:bg-slate-900 p-6 md:p-7 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-5 transition-colors">
                 <div class="border-b border-slate-100 dark:border-slate-800 pb-3">
                     <h3 class="font-black text-slate-900 dark:text-slate-100 text-sm md:text-base flex items-center gap-2">
-                        <span class="material-icons-round text-base text-custom-primary">bolt</span>
+                        <span class="material-icons-round text-base text-custom-primary">touch_app</span>
                         Acciones Rápidas
                     </h3>
-                    <p class="text-slate-400 dark:text-slate-500 text-xs">Módulos más consultados de tu cuenta.</p>
+                    <p class="text-slate-400 dark:text-slate-500 text-xs">Atajos a tus trámites principales.</p>
                 </div>
 
-                <div class="space-y-2.5">
+                <div class="space-y-3">
+                    <!-- Horario y Asignaturas -->
                     <a href="{{ route('indexmaterias.index') }}" 
-                       class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 transition-all group">
+                       class="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 transition-all group">
                         <div class="flex items-center gap-3">
-                            <span class="material-icons-round text-xl text-indigo-600 dark:text-indigo-400">auto_stories</span>
-                            <span class="font-bold text-xs md:text-sm text-slate-800 dark:text-slate-200">Horario y Materias</span>
-                        </div>
-                        <span class="material-icons-round text-slate-400 group-hover:translate-x-1 transition-transform text-sm">chevron_right</span>
-                    </a>
-
-                    <a href="{{ route('alumnoPagos.index') }}" 
-                       class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 transition-all group">
-                        <div class="flex items-center gap-3">
-                            <span class="material-icons-round text-xl text-emerald-600 dark:text-emerald-400">payments</span>
-                            <span class="font-bold text-xs md:text-sm text-slate-800 dark:text-slate-200">Comprobantes de Pago</span>
-                        </div>
-                        <span class="material-icons-round text-slate-400 group-hover:translate-x-1 transition-transform text-sm">chevron_right</span>
-                    </a>
-
-                    @if($faseFinalHabilitada)
-                        <a href="{{ route('titulacion.index') }}" 
-                           class="flex items-center justify-between p-3.5 rounded-2xl bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100/60 dark:hover:bg-rose-950/50 border border-rose-200/60 dark:border-rose-900/40 transition-all group">
-                            <div class="flex items-center gap-3">
-                                <span class="material-icons-round text-xl text-custom-primary">history_edu</span>
-                                <span class="font-bold text-xs md:text-sm text-slate-900 dark:text-slate-100">Proyecto de Titulación</span>
+                            <div class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                                <span class="material-icons-round text-lg">view_week</span>
                             </div>
-                            <span class="material-icons-round text-custom-primary group-hover:translate-x-1 transition-transform text-sm">chevron_right</span>
-                        </a>
-                    @endif
+                            <span class="font-bold text-xs md:text-sm text-slate-800 dark:text-slate-200">Horario Semanal</span>
+                        </div>
+                        <span class="material-icons-round text-slate-400 group-hover:translate-x-1 transition-transform text-base">chevron_right</span>
+                    </a>
+
+                    <!-- Subir Comprobante de Pago -->
+                    <a href="{{ route('alumnoPagos.index') }}" 
+                       class="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 transition-all group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                <span class="material-icons-round text-lg">receipt_long</span>
+                            </div>
+                            <span class="font-bold text-xs md:text-sm text-slate-800 dark:text-slate-200">Reportar Depósito</span>
+                        </div>
+                        <span class="material-icons-round text-slate-400 group-hover:translate-x-1 transition-transform text-base">chevron_right</span>
+                    </a>
+
+                    <!-- Configurar 2FA -->
+                    <a href="{{ route('2fa.setup') }}" 
+                       class="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 transition-all group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-custom-light text-custom-primary flex items-center justify-center">
+                                <span class="material-icons-round text-lg">security</span>
+                            </div>
+                            <span class="font-bold text-xs md:text-sm text-slate-800 dark:text-slate-200">Google Authenticator</span>
+                        </div>
+                        <span class="material-icons-round text-custom-primary group-hover:translate-x-1 transition-transform text-base">chevron_right</span>
+                    </a>
                 </div>
 
-                <!-- Aviso de Asistencia Institucional -->
-                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/80 space-y-1">
-                    <p class="text-[11px] font-black text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                        <span class="material-icons-round text-xs text-custom-primary">support_agent</span>
-                        Orientación y Soporte
+                <!-- Soporte Institucional -->
+                <div class="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/80 space-y-1.5">
+                    <p class="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                        <span class="material-icons-round text-sm text-custom-primary">contact_support</span>
+                        ¿Dudas o Aclaraciones?
                     </p>
                     <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                        Para aclaraciones con tu matrícula o asignación de grupo, acude al departamento de Control Escolar de tu plantel.
+                        Acude a ventanilla de Control Escolar en horario hábil para validación de cargas o cambio de turno.
                     </p>
                 </div>
             </div>
+
         </div>
 
     </div>

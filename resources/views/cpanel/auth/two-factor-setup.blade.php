@@ -1,4 +1,15 @@
-@extends('cpanel/plantillaadmin')
+@php
+    $rolActual = strtolower(auth()->user()->rol ?? 'administrador');
+    $plantilla = match($rolActual) {
+        'estudiante', 'alumno' => 'cpanel.plantillaestudiante',
+        'docente'              => 'cpanel.plantilladocente',
+        'control escolar'      => 'cpanel.plantillaCE',
+        'coordinador'          => 'cpanel.plantillacoordinacion',
+        default                => 'cpanel.plantillaadmin',
+    };
+@endphp
+
+@extends($plantilla)
 @section('title', 'Seguridad - Google Authenticator')
 
 @section('content')
@@ -7,7 +18,7 @@
     <div class="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-8">
         
         <!-- ENCABEZADO -->
-        <div class="border-b border-slate-100 dark:border-slate-800 pb-5 flex items-center justify-between gap-4">
+        <div class="border-b border-slate-100 dark:border-slate-800 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 <div class="flex items-center gap-2 text-custom-primary text-xs font-black uppercase tracking-widest mb-1">
                     <span class="material-icons-round text-base">security</span>

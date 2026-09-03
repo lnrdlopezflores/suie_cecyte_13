@@ -64,6 +64,7 @@
         .text-custom-primary { color: var(--color-primary) !important; }
         .border-custom-primary { border-color: var(--color-primary) !important; }
         .hover\:bg-custom-primary-hover:hover { background-color: var(--color-primary-hover) !important; color: #ffffff !important; }
+        .bg-custom-light { background-color: var(--color-primary-light) !important; }
 
         /* 3. Sobrescritura para elementos y botones (excluyendo fondos de layout) */
         button[class*="bg-[#841B44]"],
@@ -171,6 +172,15 @@
                             Rol: Estudiante
                         </span>
                     </div>
+
+                    <!-- Enlace directo a Google Authenticator 2FA -->
+                    @if(Route::has('2fa.setup'))
+                        <a href="{{ route('2fa.setup') }}" 
+                           class="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                            <span class="material-icons-round text-base text-custom-primary">phonelink_lock</span>
+                            <span>Google Authenticator (2FA)</span>
+                        </a>
+                    @endif
 
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
@@ -291,6 +301,21 @@
 
                     </nav>
                 </div>
+
+                <!-- SECCIÓN 3: SEGURIDAD Y CUENTA -->
+                <div>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 block mb-2.5">Seguridad</span>
+                    <nav class="space-y-1">
+                        @if(Route::has('2fa.setup'))
+                            <a href="{{ route('2fa.setup') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('2fa.*') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
+                                <span class="material-icons-round text-base">phonelink_lock</span>
+                                <span>Google Authenticator</span>
+                            </a>
+                        @endif
+                    </nav>
+                </div>
+
             </div>
         </aside>
 
