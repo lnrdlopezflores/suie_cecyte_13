@@ -78,13 +78,16 @@ class CoodinacionCargaController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            // Valida que el docente exista y que su usuario asociado esté activo
+            // Valida que el docente exista y pertenezca a un usuario activo usando una subconsulta segura
             'docente_id' => [
                 'required',
                 'integer',
                 Rule::exists('docentes', 'id')->where(function ($query) {
-                    $query->join('usuarios', 'docentes.usuario_id', '=', 'usuarios.id')
-                          ->where('usuarios.activo', 1);
+                    $query->whereIn('usuario_id', function ($sub) {
+                        $sub->select('id')
+                            ->from('usuarios')
+                            ->where('activo', 1);
+                    });
                 }),
             ],
             'materia_id' => ['required', 'integer', 'exists:materias,id'],
@@ -94,8 +97,8 @@ class CoodinacionCargaController extends Controller
                 'exists:grupos,id',
                 Rule::unique('carga_academica')->where(function ($query) use ($request) {
                     return $query->where('docente_id', $request->input('docente_id'))
-                                 ->where('materia_id', $request->input('materia_id'))
-                                 ->where('grupo_id', $request->input('grupo_id'));
+                                ->where('materia_id', $request->input('materia_id'))
+                                ->where('grupo_id', $request->input('grupo_id'));
                 })
             ],
             'aula'       => ['required', 'string', 'max:30'],

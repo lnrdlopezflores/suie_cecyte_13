@@ -1,4 +1,4 @@
-@extends('cpanel/plantillacoordinacion')
+@extends('cpanel/plantillaCE')
 @section('title', 'Planeación - Cargas Académicas')
 
 @section('content')
