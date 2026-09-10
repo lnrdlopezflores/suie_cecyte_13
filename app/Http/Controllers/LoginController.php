@@ -86,7 +86,7 @@ class LoginController extends Controller
     {
         return match ($rol) {
             'Coordinador'     => redirect()->route('coordinador.dashboard'),
-            'Orientador'      => redirect()->route('orientacion.asistencias'),
+            'Orientador'      => redirect()->route('asistencias.criticas'),
             'Control Escolar' => redirect()->route('alumnos.index'),
             'Docente'         => redirect()->route('dashboardDocente.index'),
             'Estudiante'      => redirect()->route('indexalumnos.index'),

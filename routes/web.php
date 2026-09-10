@@ -107,5 +107,7 @@ Route::resource('/finanzas/pagos', ValidarPagoController::class)->names('contado
 Route::get('/finanzas/pagos/{id}/revisar', [ValidarPagoController::class, 'revisar'])->name('contador.pagos.revisar');
 Route::post('/finanzas/pagos/{id}/validar', [ValidarPagoController::class, 'validar'])->name('contador.pagos.validar');
 
-Route::get('/orientacion/asistencias', [AsistenciaController::class, 'reporteCritico'])->name('asistencias.criticas');
-Route::post('/orientacion/asistencias/alerta', [AsistenciaController::class, 'enviarAlertaTutor'])->name('asistencias.alerta-tutor');
+Route::middleware(['auth', 'rol:Orientador'])->group(function () {
+    Route::get('/orientacion/asistencias', [AsistenciaController::class, 'reporteCritico'])->name('asistencias.criticas');
+    Route::post('/orientacion/asistencias/alerta', [AsistenciaController::class, 'enviarAlertaTutor'])->name('asistencias.alerta-tutor');
+});
