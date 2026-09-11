@@ -26,6 +26,8 @@ use App\Http\Controllers\UsuarioPreferenciaController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\GoogleAuthConfigController;
 use App\Http\Controllers\TwoFactorController;
+use App\Http\Controllers\DocenteJuradoController;
+use App\Http\Controllers\AlumnoTitulacionDocumentoController;
 
 
 Route::get('/', function () {
@@ -62,7 +64,7 @@ Route::middleware(['auth', 'rol:administrador'])->group(function () {
 });
 
 Route::middleware(['auth', 'rol:Estudiante'])->group(function () {
-    Route::resource('/alumno/', AlumnoPortalController::class)->names('indexalumnos');
+    Route::resource('/alumno', AlumnoPortalController::class)->names('indexalumnos');
     Route::resource('/alumno/materias', AlumnoMateriasController::class)->names('indexmaterias');
     Route::resource('/alumno/pagos', AlumnoPagosController::class)->names('alumnoPagos');
     Route::post('/alumno/pagos/reportar', [AlumnoPagosController::class, 'store'])->name('alumno.pagos.store');
@@ -72,6 +74,8 @@ Route::middleware(['auth', 'rol:Estudiante'])->group(function () {
     Route::get('/alumno/titulacion/repositorio/{proyectoId}', [titulacionController::class, 'repositorio'])->name('titulacion.repositorio');
     Route::post('/alumno/titulacion/repositorio/guardar-entregable', [titulacionController::class, 'guardarEntregable'])->name('titulacion.guardar-entregable');
     Route::post('/alumno/titulacion/repositorio/guardar-video', [titulacionController::class, 'guardarVideo'])->name('titulacion.guardar-video');
+    Route::get('/alumno/titulacion/documentos', [AlumnoTitulacionDocumentoController::class, 'index'])->name('proceso.titulacion.index');
+    Route::post('/alumno/titulacion/documentos/subir', [AlumnoTitulacionDocumentoController::class, 'subirDocumento'])->name('alumno.titulacion.documentos.subir');
 });
 
 Route::middleware(['auth', 'rol:Control Escolar'])->group(function () {
@@ -87,9 +91,11 @@ Route::middleware(['auth', 'rol:Docente'])->group(function () {
     Route::resource('/docente/index', DashboardDocenteController::class)->names('dashboardDocente');
     Route::get('/docente/asistencia/tomar/{cargaId}', [AsistenciaController::class, 'tomarAsistencia'])->name('asistencia.tomar');  
     Route::post('/docente/asistencia/guardar/{cargaId}', [AsistenciaController::class, 'guardarAsistencia'])->name('asistencia.guardar');
-    Route::get('/titulacion/asesorados', [DocenteTitulacionController::class, 'index'])->name('docente.titulacion.asesorados');
-    Route::post('/titulacion/evaluar', [DocenteTitulacionController::class, 'evaluar'])->name('docente.titulacion.evaluar');
-    Route::post('/titulacion/votar-jurado', [DocenteTitulacionController::class, 'votarJurado'])->name('docente.titulacion.votar-jurado');
+    Route::get('/docente/titulacion/asesorados', [DocenteTitulacionController::class, 'index'])->name('docente.titulacion.asesorados');
+    Route::post('/docente/titulacion/evaluar', [DocenteTitulacionController::class, 'evaluar'])->name('docente.titulacion.evaluar');
+    Route::post('/docente/titulacion/votar-jurado', [DocenteTitulacionController::class, 'votarJurado'])->name('docente.titulacion.votar-jurado');
+    Route::get('/docente/jurado/proyectos', [DocenteJuradoController::class, 'index'])->name('docente.jurado.index');
+    Route::post('/docente/jurado/proyectos/{proyecto}/dictaminar', [DocenteJuradoController::class, 'dictaminar'])->name('docente.jurado.dictaminar');
 });
 
 Route::middleware(['auth', 'rol:Coordinador'])->group(function(){
