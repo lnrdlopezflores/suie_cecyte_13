@@ -66,8 +66,13 @@
         .hover\:bg-custom-primary-hover:hover { background-color: var(--color-primary-hover) !important; color: #ffffff !important; }
 
         /* 3. Sobrescritura forzada de clases estáticas heredadas */
-        [class*="bg-[#841B44]"],
-        [class*="bg-\[\#841B44\]"] {
+        button[class*="bg-[#841B44]"],
+        a[class*="bg-[#841B44]"],
+        span[class*="bg-[#841B44]"],
+        div[class*="bg-[#841B44]"]:not(body):not(html),
+        button[class*="bg-\[\#841B44\]"],
+        a[class*="bg-\[\#841B44\]"],
+        span[class*="bg-\[\#841B44\]"] {
             background-color: var(--color-primary) !important;
             color: #ffffff !important;
         }
@@ -128,7 +133,7 @@
         <div class="flex items-center space-x-3 md:space-x-4">
             
             <!-- Botón Alternar Modo Oscuro -->
-            <button id="btn-theme-toggle" type="button" aria-label="Cambiar tema"
+            <button id="btn-theme-toggle" type="button" aria-label="Cambiar tema" 
                     class="p-2.5 text-slate-500 dark:text-slate-400 hover:text-custom-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700/80 shadow-3xs">
                 <span id="theme-icon-light" class="material-icons-round text-xl hidden dark:block text-amber-400">light_mode</span>
                 <span id="theme-icon-dark" class="material-icons-round text-xl block dark:hidden text-slate-600">dark_mode</span>
@@ -196,20 +201,24 @@
                 <div>
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 block mb-2.5">Ingresos por Caja</span>
                     <nav class="space-y-1">
-                        <a href="#" 
-                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300">
+                        <a href="{{ route('contador.reportes.index') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('contador.reportes.*') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
+                            <span class="material-icons-round text-base">assessment</span>
+                            <span>Reportes de Ingresos</span>
+                        </a>
+                        
+                        <!-- 1. Revisar Fichas (Pagos) - Activo en index, revisión o rutas hijas de pagos -->
+                        <a href="{{ route('contador.pagos.index') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all {{ (request()->routeIs('contador.pagos.*') || request()->is('*finanzas/pagos*')) ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
                             <span class="material-icons-round text-base">fact_check</span>
                             <span>Revisar Fichas (Pagos)</span>
                         </a>
+
+                        <!-- 2. Registrar Cobro Directo -->
                         <a href="#" 
-                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300">
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('contador.cobro-directo.*') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
                             <span class="material-icons-round text-base">point_of_sale</span>
                             <span>Registrar Cobro Directo</span>
-                        </a>
-                        <a href="#" 
-                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300">
-                            <span class="material-icons-round text-base">assessment</span>
-                            <span>Reportes de Ingresos</span>
                         </a>
                     </nav>
                 </div>

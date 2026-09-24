@@ -66,8 +66,13 @@
         .hover\:bg-custom-primary-hover:hover { background-color: var(--color-primary-hover) !important; color: #ffffff !important; }
 
         /* 3. Sobrescritura forzada de clases estáticas heredadas */
-        [class*="bg-[#841B44]"],
-        [class*="bg-\[\#841B44\]"] {
+        button[class*="bg-[#841B44]"],
+        a[class*="bg-[#841B44]"],
+        span[class*="bg-[#841B44]"],
+        div[class*="bg-[#841B44]"]:not(body):not(html),
+        button[class*="bg-\[\#841B44\]"],
+        a[class*="bg-\[\#841B44\]"],
+        span[class*="bg-\[\#841B44\]"] {
             background-color: var(--color-primary) !important;
             color: #ffffff !important;
         }
@@ -101,15 +106,19 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 text-sm md:text-base antialiased transition-colors duration-200 min-h-screen flex flex-col">
+<body class="bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 text-sm h-screen flex flex-col overflow-hidden transition-colors duration-200">
 
-    <div class="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950">
+    <!-- HEADER PRINCIPAL -->
+    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 md:px-7 h-16 md:h-18 flex justify-between items-center shrink-0 z-50 relative shadow-2xs transition-colors duration-200">
         
-        <!-- HEADER PRINCIPAL -->
-        <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xs px-4 md:px-7 h-16 md:h-18 flex justify-between items-center sticky top-0 z-40 transition-colors duration-200">
+        <!-- Lado Izquierdo: Menú Móvil + Identidad -->
+        <div class="flex items-center space-x-3 md:space-x-4">
+            <button id="btn-toggle-sidebar" type="button" aria-label="Abrir menú" 
+                    class="md:hidden text-slate-600 dark:text-slate-300 hover:text-custom-primary hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-xl focus:outline-hidden inline-flex items-center cursor-pointer transition-colors">
+                <span class="material-icons-round text-2xl">menu</span>
+            </button>
             
-            <!-- Lado Izquierdo: Identidad de Orientación Educativa -->
-            <div class="flex items-center space-x-3 md:space-x-4">
+            <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 rounded-xl bg-custom-primary flex items-center justify-center shadow-xs shrink-0">
                     <span class="material-icons-round text-2xl text-white">psychology</span>
                 </div>
@@ -118,81 +127,138 @@
                     <p class="text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-widest mt-0.5">Orientación Educativa</p>
                 </div>
             </div>
+        </div>
+        
+        <!-- Lado Derecho: Modo Oscuro + Dropdown de Perfil -->
+        <div class="flex items-center space-x-3 md:space-x-4">
+            
+            <!-- Botón Alternar Modo Oscuro -->
+            <button id="btn-theme-toggle" type="button" aria-label="Cambiar tema" 
+                    class="p-2.5 text-slate-500 dark:text-slate-400 hover:text-custom-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700/80 shadow-3xs">
+                <span id="theme-icon-light" class="material-icons-round text-xl hidden dark:block text-amber-400">light_mode</span>
+                <span id="theme-icon-dark" class="material-icons-round text-xl block dark:hidden text-slate-600">dark_mode</span>
+            </button>
 
-            <!-- Lado Derecho: Modo Oscuro + Dropdown de Perfil -->
-            <div class="flex items-center space-x-3 md:space-x-4">
-                
-                <!-- Botón Alternar Modo Oscuro -->
-                <button id="btn-theme-toggle" type="button" aria-label="Alternar tema"
-                        class="p-2.5 text-slate-500 dark:text-slate-400 hover:text-custom-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700/80 shadow-3xs">
-                    <span id="theme-icon-light" class="material-icons-round text-xl hidden dark:block text-amber-400">light_mode</span>
-                    <span id="theme-icon-dark" class="material-icons-round text-xl block dark:hidden text-slate-600">dark_mode</span>
-                </button>
-
-                @if(auth()->check())
-                    <!-- Dropdown de Usuario -->
-                    <div class="relative" id="user-menu-container">
-                        <button id="btn-user-dropdown" type="button" 
-                                class="flex items-center gap-3 p-1.5 md:pr-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all cursor-pointer select-none">
-                            
-                            <div class="w-9 h-9 md:w-10 md:h-10 bg-slate-100 dark:bg-slate-800 text-custom-primary font-black rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-700 text-xs md:text-sm shrink-0 shadow-3xs">
-                                OE
-                            </div>
-
-                            <div class="text-left hidden sm:block">
-                                <p class="text-xs md:text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight">
-                                    Orientador(a)
-                                </p>
-                                <p class="text-[10px] text-custom-primary font-bold uppercase tracking-wider font-mono">
-                                    {{ auth()->user()->username ?? 'ORIENTADOR' }}
-                                </p>
-                            </div>
-
-                            <span class="material-icons-round text-base text-slate-400 hidden sm:block">expand_more</span>
-                        </button>
-
-                        <!-- Menú Flotante -->
-                        <div id="user-dropdown-menu" 
-                             class="hidden absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2 space-y-1.5 z-50">
-                            
-                            <div class="px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700/60">
-                                <p class="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider">Sesión iniciada como</p>
-                                <p class="text-xs font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">{{ auth()->user()->username }}</p>
-                                <span class="inline-block mt-1 px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-rose-50 dark:bg-rose-950/60 text-custom-primary border border-rose-200 dark:border-rose-900/60">
-                                    Rol: Orientación Educativa
-                                </span>
-                            </div>
-
-                            <form action="{{ route('logout') }}" method="POST">
-                                @csrf
-                                <button type="submit" 
-                                        class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer">
-                                    <span class="material-icons-round text-base">logout</span>
-                                    <span>Cerrar Sesión</span>
-                                </button>
-                            </form>
+            <!-- Dropdown Unificado de Usuario -->
+            @if(auth()->check())
+                <div class="relative" id="user-menu-container">
+                    <button id="btn-user-dropdown" type="button" 
+                            class="flex items-center gap-3 p-1.5 md:pr-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all cursor-pointer select-none">
+                        
+                        <div class="w-9 h-9 md:w-10 md:h-10 bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-400 font-black rounded-xl flex items-center justify-center border border-cyan-200 dark:border-cyan-800 text-xs md:text-sm shrink-0 shadow-3xs">
+                            OE
                         </div>
+
+                        <div class="text-left hidden sm:block">
+                            <p class="text-xs md:text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight">
+                                Orientador(a)
+                            </p>
+                            <p class="text-[10px] text-custom-primary font-bold uppercase tracking-wider font-mono">
+                                {{ auth()->user()->username ?? 'ORIENTACION' }}
+                            </p>
+                        </div>
+
+                        <span class="material-icons-round text-base text-slate-400 hidden sm:block">expand_more</span>
+                    </button>
+
+                    <!-- Menú Desplegable -->
+                    <div id="user-dropdown-menu" 
+                         class="hidden absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2 space-y-1.5 z-50">
+                        
+                        <div class="px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700/60">
+                            <p class="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider">Módulo Operativo</p>
+                            <p class="text-xs font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">{{ auth()->user()->username }}</p>
+                            <span class="inline-block mt-1 px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-800/80">
+                                Rol: Orientación Educativa
+                            </span>
+                        </div>
+
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" 
+                                    class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer">
+                                <span class="material-icons-round text-base">logout</span>
+                                <span>Cerrar Sesión</span>
+                            </button>
+                        </form>
                     </div>
-                @else
-                    <div class="text-right hidden sm:block">
-                        <p class="text-xs font-bold text-slate-500 dark:text-slate-400">Usuario Invitado</p>
-                    </div>
-                @endif
+                </div>
+            @endif
+
+        </div>
+    </header>
+
+    <div class="flex-1 flex overflow-hidden relative">
+        
+        <!-- OVERLAY MÓVIL -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-slate-950/50 backdrop-blur-xs z-30 transition-opacity duration-300 opacity-0 pointer-events-none md:hidden"></div>
+        
+        <!-- SIDEBAR DE NAVEGACIÓN -->
+        <aside id="sidebar-menu" 
+               class="fixed md:static top-16 md:top-18 bottom-0 left-0 w-72 bg-slate-900 dark:bg-slate-950 text-slate-300 flex flex-col h-[calc(100vh-4rem)] md:h-full shrink-0 border-r border-slate-800 dark:border-slate-800/80 z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
+            
+            <div class="p-4 space-y-6 overflow-y-auto flex-1">
+                
+                <!-- SECCIÓN: MONITOREO Y SEGUIMIENTO -->
+                <div>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 block mb-2.5">Acompañamiento Escolar</span>
+                    <nav class="space-y-1">
+                        
+                        <!-- 1. Alertas de Asistencias Críticas -->
+                        <a href="{{ route('asistencias.criticas') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('asistencias.criticas') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
+                            <span class="material-icons-round text-base">warning_amber</span>
+                            <span>Alertas de Asistencia</span>
+                        </a>
+
+                        <!-- 2. Estadísticas y Gráficas de Asistencia -->
+                        @if(Route::has('orientacion.graficas.index'))
+                            <a href="{{ route('orientacion.graficas.index') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('orientacion.graficas.*') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
+                                <span class="material-icons-round text-base">bar_chart</span>
+                                <span>Gráficas y Estadísticas</span>
+                            </a>
+                        @else
+                            <a href="{{ url('/orientacion/graficas') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all {{ request()->is('*orientacion/graficas*') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
+                                <span class="material-icons-round text-base">bar_chart</span>
+                                <span>Gráficas y Estadísticas</span>
+                            </a>
+                        @endif
+
+                    </nav>
+                </div>
 
             </div>
-        </header>
+        </aside>
 
         <!-- ÁREA DE CONTENIDO DINÁMICO -->
-        <main class="flex-1 w-full mx-auto bg-slate-50 dark:bg-slate-950">
+        <main class="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 w-full transition-colors duration-200">
             @yield('content')
         </main>
-        
+
     </div>
 
     <!-- SCRIPTS DE CONTROL -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // 1. Dropdown de Perfil
+            // 1. Sidebar móvil
+            const btnToggle = document.getElementById('btn-toggle-sidebar');
+            const sidebar = document.getElementById('sidebar-menu');
+            const overlay = document.getElementById('sidebar-overlay');
+
+            function toggleSidebar() {
+                sidebar.classList.toggle('-translate-x-full');
+                overlay.classList.toggle('opacity-0');
+                overlay.classList.toggle('pointer-events-none');
+            }
+
+            if (btnToggle && sidebar && overlay) {
+                btnToggle.addEventListener('click', toggleSidebar);
+                overlay.addEventListener('click', toggleSidebar);
+            }
+
+            // 2. Dropdown de Perfil
             const userBtn = document.getElementById('btn-user-dropdown');
             const userMenu = document.getElementById('user-dropdown-menu');
 
@@ -209,7 +275,7 @@
                 });
             }
 
-            // 2. Alternancia y Persistencia del Tema Oscuro por Usuario
+            // 3. Alternancia y Persistencia del Tema Oscuro
             const btnTheme = document.getElementById('btn-theme-toggle');
             if (btnTheme) {
                 btnTheme.addEventListener('click', function () {
@@ -233,10 +299,13 @@
                 });
             }
 
-            // 3. Accesibilidad: Cerrar menú con tecla Escape
+            // 4. Cerrar menús con tecla Escape
             document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && userMenu) {
-                    userMenu.classList.add('hidden');
+                if (e.key === 'Escape') {
+                    if (userMenu) userMenu.classList.add('hidden');
+                    if (sidebar && !sidebar.classList.contains('-translate-x-full') && window.innerWidth < 768) {
+                        toggleSidebar();
+                    }
                 }
             });
         });

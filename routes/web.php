@@ -30,6 +30,8 @@ use App\Http\Controllers\DocenteJuradoController;
 use App\Http\Controllers\AlumnoTitulacionDocumentoController;
 use App\Http\Controllers\ControlEscolarTitulacionController;
 use App\Http\Controllers\PersonalController;
+use App\Http\Controllers\ReportesIngresosController;
+use App\Http\Controllers\OrientacionGraficasController;
 
 
 Route::get('/', function () {
@@ -53,8 +55,7 @@ Route::middleware(['auth'])->prefix('cuenta/seguridad')->group(function () {
 
 Route::middleware(['auth', 'rol:administrador'])->group(function () {
     Route::resource('/admon/usuarios', UsuarioController::class)->names('usuarios');
-    Route::patch('/admin/usuarios/toggle/{id}', [UsuarioController::class, 'toggleStatus'])
-        ->name('usuarios.toggle-status');
+    Route::patch('/admin/usuarios/toggle/{id}', [UsuarioController::class, 'toggleStatus'])->name('usuarios.toggle-status');
     Route::resource('/admon/docentes', DocenteController::class)->names('docentes');
     Route::resource('/admon/alumnos', AlumnosAdminController::class)->names('AdAlumnos');
     Route::patch('/admon/alumnos/toggle/{id}', [AlumnosAdminController::class, 'store'])->name('admin.alumnos.toggle-status');
@@ -67,9 +68,7 @@ Route::middleware(['auth', 'rol:administrador'])->group(function () {
 });
 
 Route::middleware(['auth', 'rol:Estudiante'])->group(function () {
-    Route::resource('alumno', AlumnoPortalController::class)
-        ->names('indexalumnos')
-        ->except(['show']);
+    Route::resource('alumno', AlumnoPortalController::class)->names('indexalumnos')->except(['show']);
     Route::resource('/alumno/materias', AlumnoMateriasController::class)->names('indexmaterias');
     Route::resource('/alumno/pagos', AlumnoPagosController::class)->names('alumnoPagos');
     Route::post('/alumno/pagos/reportar', [AlumnoPagosController::class, 'store'])->name('alumno.pagos.store');
@@ -114,24 +113,17 @@ Route::middleware(['auth', 'rol:Coordinador'])->group(function(){
     Route::get('/dashboard', [CoordinacionDashboardController::class, 'index'])->name('coordinador.dashboard');
 });
 
-
-
-Route::get('/finanzas/pagos', [ValidarPagoController::class, 'index'])
-        ->name('contador.pagos.index');
-
-    // Pantalla de revisión / conciliación (La que te dio error 404)
-    Route::get('/finanzas/pagos/{id}/revisar', [ValidarPagoController::class, 'revisar'])
-        ->name('contador.pagos.revisar');
-
-    // Acción de aprobar / validar el pago
-    Route::post('/finanzas/pagos/{id}/validar', [ValidarPagoController::class, 'validar'])
-        ->name('contador.pagos.validar');
-
-    // Stream del comprobante físico PDF/Imagen para el iframe
-    Route::get('/finanzas/pagos/{id}/comprobante', [ValidarPagoController::class, 'verComprobante'])
-        ->name('contador.pagos.comprobante');
-
 Route::middleware(['auth', 'rol:Orientador'])->group(function () {
     Route::get('/orientacion/asistencias', [AsistenciaController::class, 'reporteCritico'])->name('asistencias.criticas');
     Route::post('/orientacion/asistencias/alerta', [AsistenciaController::class, 'enviarAlertaTutor'])->name('asistencias.alerta-tutor');
+    Route::get('/orientacion/graficas', [OrientacionGraficasController::class, 'index'])->name('orientacion.graficas.index');
 });
+
+
+
+Route::get('/finanzas/pagos', [ValidarPagoController::class, 'index']) ->name('contador.pagos.index');
+Route::get('/finanzas/pagos/{id}/revisar', [ValidarPagoController::class, 'revisar'])->name('contador.pagos.revisar');
+Route::post('/finanzas/pagos/{id}/validar', [ValidarPagoController::class, 'validar'])->name('contador.pagos.validar');
+Route::get('/finanzas/pagos/{id}/comprobante', [ValidarPagoController::class, 'verComprobante'])->name('contador.pagos.comprobante');
+Route::get('/reportes', [ReportesIngresosController::class, 'index'])->name('contador.reportes.index');
+
