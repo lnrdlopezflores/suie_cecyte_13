@@ -38,7 +38,7 @@ class AlumnoTitulacionDocumentoController extends Controller
         $subidos   = $documentosSubidos->count();
         $porcentaje = round(($aprobados / $totalDocs) * 100);
 
-        return view('cpanel.alumnos.documentos-titulacion', [
+        return view('cpanel./titulacion/documentos-titulacion', [
             'catalogo'          => $this->catalogoDocumentos,
             'documentosSubidos' => $documentosSubidos,
             'totalDocs'         => $totalDocs,

@@ -259,7 +259,7 @@
                         ¿Dudas o Aclaraciones?
                     </p>
                     <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                        Acude a ventanilla de Control Escolar en horario hábil para validación de cargas o cambio de turno.
+                        Acude al departamento de Control Escolar en horario hábil para validación o corrección de cargas academicas.
                     </p>
                 </div>
             </div>

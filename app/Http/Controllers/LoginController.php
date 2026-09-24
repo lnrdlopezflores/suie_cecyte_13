@@ -4,72 +4,80 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 
 class LoginController extends Controller
 {
     /**
-     * Procesar el inicio de sesión y redireccionar según el Rol o solicitar 2FA.
+     * Procesar el inicio de sesión con protección anti-SQLi y anti-fuerza bruta.
      */
     public function login(Request $request)
     {
-        // 1. Validar datos de entrada
+        // 1. Limpieza y validación tipada estricta (limita longitud para mitigar DoS/fuerza bruta)
         $credentials = $request->validate([
-            'username' => ['required', 'string'],
-            'password' => ['required', 'string'],
+            'username' => ['required', 'string', 'max:50'],
+            'password' => ['required', 'string', 'max:72'],
         ]);
 
-        // 2. Buscar primero al usuario para auditar su estatus
-        $user = DB::table('usuarios')->where('username', $credentials['username'])->first();
+        $username = trim($credentials['username']);
+        $password = $credentials['password'];
 
-        if ($user) {
-            // Si el usuario existe pero está dado de baja (activo = 0)
-            if (!$user->activo) {
-                throw ValidationException::withMessages([
-                    'username' => ['El acceso a esta cuenta ha sido suspendido. Contacte al Administrador Central.'],
-                ]);
-            }
+        // 2. Control de intentos fallidos (Máximo 5 intentos por IP + Usuario en 1 minuto)
+        $throttleKey = Str::transliterate(Str::lower($username).'|'.$request->ip());
 
-            // 3. Si está activo, intentar autenticar con las credenciales
-            if (Auth::attempt(['username' => $credentials['username'], 'password' => $credentials['password']])) {
-                
-                $userAuth = Auth::user();
-
-                // =====================================================================
-                // 4. INTERCEPTOR GOOGLE AUTHENTICATOR (2FA)
-                // =====================================================================
-                if (!empty($userAuth->google2fa_enabled) && $userAuth->google2fa_enabled) {
-                    // Desconectar sesión momentánea de Laravel
-                    Auth::logout();
-
-                    // Guardar ID temporal en sesión para validar el código de 6 dígitos
-                    $request->session()->invalidate();
-                    $request->session()->regenerateToken();
-                    $request->session()->put('2fa_user_id', $userAuth->id);
-
-                    // Redirigir a la pantalla del código OTP
-                    return redirect()->route('2fa.challenge');
-                }
-
-                // Si NO tiene 2FA activo, marcar como completado
-                $request->session()->regenerate();
-                $request->session()->put('2fa_passed', true);
-
-                // 5. Redirección por Match de Rol
-                return $this->getRedireccionPorRol($userAuth->rol);
-            }
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            throw ValidationException::withMessages([
+                'username' => ["Demasiados intentos fallidos. Intenta nuevamente en {$seconds} segundos."],
+            ]);
         }
 
-        // 6. Si no existe el usuario o la contraseña es errónea
+        // 3. Consulta parametrizada segura con PDO (Protegida nativamente contra SQLi)
+        $user = DB::table('usuarios')->where('username', $username)->first();
+
+        // 4. Verificación de estatus activo si el usuario existe
+        if ($user && empty($user->activo)) {
+            RateLimiter::hit($throttleKey);
+            throw ValidationException::withMessages([
+                'username' => ['El acceso a esta cuenta ha sido suspendido. Contacte a la administración.'],
+            ]);
+        }
+
+        // 5. Intento de autenticación seguro (Laravel vincula los parámetros automáticamente)
+        if (Auth::attempt(['username' => $username, 'password' => $password, 'activo' => 1])) {
+            RateLimiter::clear($throttleKey);
+
+            $userAuth = Auth::user();
+
+            // 6. Interceptor Google Authenticator (2FA)
+            if (!empty($userAuth->google2fa_enabled) && $userAuth->google2fa_enabled) {
+                Auth::logout();
+
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                $request->session()->put('2fa_user_id', $userAuth->id);
+
+                return redirect()->route('2fa.challenge');
+            }
+
+            // Sesión regular sin 2FA
+            $request->session()->regenerate();
+            $request->session()->put('2fa_passed', true);
+
+            return $this->getRedireccionPorRol($userAuth->rol);
+        }
+
+        // 7. Registro de intento fallido
+        RateLimiter::hit($throttleKey);
+
         throw ValidationException::withMessages([
             'username' => ['La clave de usuario o contraseña introducida es incorrecta.'],
         ]);
     }
 
-    /**
-     * Redirige al panel correspondiente si ya está autenticado.
-     */
     public function redirectByRol()
     {
         if (Auth::check()) {
@@ -79,25 +87,19 @@ class LoginController extends Controller
         return redirect()->to('/');
     }
 
-    /**
-     * Auxiliar centralizado para redirecciones de rol en SUIE.
-     */
     private function getRedireccionPorRol(string $rol)
     {
-        return match ($rol) {
-            'Coordinador'     => redirect()->route('coordinador.dashboard'),
-            'Orientador'      => redirect()->route('asistencias.criticas'),
-            'Control Escolar' => redirect()->route('alumnos.index'),
-            'Docente'         => redirect()->route('dashboardDocente.index'),
-            'Estudiante'      => redirect()->route('indexalumnos.index'),
+        return match (strtolower(trim($rol))) {
+            'coordinador'     => redirect()->route('coordinador.dashboard'),
+            'orientador'      => redirect()->route('asistencias.criticas'),
+            'control escolar' => redirect()->route('alumnos.index'),
+            'docente'         => redirect()->route('dashboardDocente.index'),
+            'estudiante'      => redirect()->route('indexalumnos.index'),
             'administrador'   => redirect()->route('usuarios.index'),
             default           => redirect()->to('/'),
         };
     }
 
-    /**
-     * Cerrar sesión del sistema y limpiar sesiones de 2FA.
-     */
     public function logout(Request $request)
     {
         Auth::logout();

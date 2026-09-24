@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Support\Facades\Storage;
 
 class ValidarPagoController extends Controller
 {
@@ -120,5 +121,41 @@ class ValidarPagoController extends Controller
         return redirect()
             ->route('contador.pagos.index')
             ->with('success', "El pago #{$id} ha sido aprobado con éxito.");
+    }
+
+    public function verComprobante($id)
+    {
+        $pago = DB::table('pagos')->where('id', $id)->first();
+
+        if (!$pago || empty($pago->comprobante_url)) {
+            abort(404, 'Comprobante no registrado.');
+        }
+
+        // 1. Desencriptar la ruta del archivo si está cifrada
+        $rutaArchivo = $pago->comprobante_url;
+        try {
+            if (str_starts_with($rutaArchivo, 'ey') || strlen($rutaArchivo) > 100) {
+                $rutaArchivo = decrypt($rutaArchivo);
+            }
+        } catch (DecryptException $e) {
+            // Se mantiene el valor si estaba en texto plano
+        }
+
+        // Limpiar cualquier prefijo 'storage/' o 'public/' sobrante
+        $rutaArchivo = ltrim(str_replace(['public/', 'storage/'], '', $rutaArchivo), '/');
+
+        // 2. Comprobar existencia en el disco public
+        if (!Storage::disk('public')->exists($rutaArchivo)) {
+            abort(404, 'El archivo físico del comprobante no existe en el servidor.');
+        }
+
+        $pathFisico = Storage::disk('public')->path($rutaArchivo);
+        $mimeType = Storage::disk('public')->mimeType($rutaArchivo) ?? 'application/pdf';
+
+        // 3. Servir el archivo directamente con encabezados HTTP limpios
+        return response()->file($pathFisico, [
+            'Content-Type'        => $mimeType,
+            'Content-Disposition' => 'inline; filename="comprobante_pago_' . $pago->id . '.pdf"'
+        ]);
     }
 }

@@ -19,85 +19,158 @@ class UsuarioController extends Controller
         return $this->cargarVista();
     }
 
-    private function cargarVista()
-    {
-        $usuarios = DB::table('usuarios')
+   private function cargarVista()
+{
+    $usuarios = DB::table('usuarios')
         ->leftJoin('alumnos', 'usuarios.id', '=', 'alumnos.usuario_id')
         ->leftJoin('docentes', 'usuarios.id', '=', 'docentes.usuario_id')
         ->leftJoin('administrador', 'usuarios.id', '=', 'administrador.usuario_id')
+        ->leftJoin('coordinador', 'usuarios.id', '=', 'coordinador.usuario_id')
+        ->leftJoin('orientador', 'usuarios.id', '=', 'orientador.usuario_id')
+        ->leftJoin('control_escolar', 'usuarios.id', '=', 'control_escolar.usuario_id')
         ->select(
             'usuarios.*',
-            DB::raw('COALESCE(alumnos.nombre, docentes.nombre, administrador.nombre) as nombre'),
-            DB::raw('COALESCE(alumnos.apellido_paterno, docentes.apellido_paterno, administrador.apaterno) as apellido_paterno'),
-            DB::raw('COALESCE(alumnos.apellido_materno, docentes.apellido_materno, administrador.amaterno) as apellido_materno')
+            DB::raw('COALESCE(alumnos.nombre, docentes.nombre, administrador.nombre, coordinador.nombre, orientador.nombre, control_escolar.nombre) as per_nombre'),
+            DB::raw('COALESCE(alumnos.apellido_paterno, docentes.apellido_paterno, administrador.apaterno, coordinador.apaterno, orientador.apaterno, control_escolar.apaterno) as per_apaterno'),
+            DB::raw('COALESCE(alumnos.apellido_materno, docentes.apellido_materno, administrador.amaterno) as per_amaterno'),
+            DB::raw('COALESCE(docentes.telefono, coordinador.telefono, orientador.telefono, control_escolar.telefono) as per_telefono')
         )
         ->orderBy('usuarios.id', 'desc')
         ->paginate(10);
 
-        return view('cpanel.usuarios.createusuario', compact('usuarios'));
-    }
+    // Desencriptar datos de forma segura
+    $usuarios->getCollection()->transform(function ($user) {
+        $nom = $this->desencriptarDato($user->per_nombre);
+        $pat = $this->desencriptarDato($user->per_apaterno);
+        $mat = $this->desencriptarDato($user->per_amaterno);
+        $tel = $this->desencriptarDato($user->per_telefono);
+
+        $nombreCompleto = trim("{$pat} {$mat} {$nom}");
+        if (empty($nombreCompleto)) {
+            $nombreCompleto = trim("{$nom} {$pat}");
+        }
+
+        $user->nombre_completo = !empty($nombreCompleto) ? $nombreCompleto : null;
+        $user->telefono_contacto = !empty($tel) ? $tel : null;
+        
+        $letra1 = !empty($nom) ? substr($nom, 0, 1) : substr($user->username, 0, 1);
+        $letra2 = !empty($pat) ? substr($pat, 0, 1) : substr($user->username, 1, 1);
+        $user->iniciales = strtoupper($letra1 . $letra2);
+
+        return $user;
+    });
+
+    return view('cpanel.usuarios.createusuario', compact('usuarios'));
+}
+
+private function desencriptarDato(?string $val): string
+{
+    if (empty($val)) return '';
+    try {
+        if (is_string($val) && (str_starts_with($val, 'ey') || strlen($val) > 50)) {
+            return decrypt($val);
+        }
+    } catch (\Throwable $e) {}
+    return str_replace(' (Plain)', '', $val);
+}
 
     public function store(Request $request)
     {
+        // 1. Validación estricta con limitación de longitud y lista blanca
         $request->validate([
-            'username' => 'required|string|unique:usuarios,username',
-            'password' => 'required|string|min:6',
-            'rol'      => 'required|string',
+            'username'         => 'required|string|max:50|unique:usuarios,username',
+            'password'         => 'required|string|min:6|max:72',
+            'rol'              => 'required|string|in:Estudiante,Docente,Orientador,Control Escolar,Coordinador,administrador',
+            'nombre'           => 'required|string|max:150',
+            'apellido_paterno' => 'required|string|max:150',
+            'apellido_materno' => 'nullable|string|max:150',
+            'telefono'         => 'nullable|string|max:20',
+            'correo'           => 'nullable|email|max:150',
+            'nombre_tutor'     => 'nullable|string|max:150',
+            'telefono_tutor'   => 'nullable|string|max:20',
         ]);
 
         DB::transaction(function () use ($request) {
+            // Alta en la tabla base de autenticación
             $usuarioId = DB::table('usuarios')->insertGetId([
                 'username'   => trim($request->username),
-                'password'   => bcrypt($request->password),
+                'password'   => Hash::make($request->password),
                 'rol'        => $request->rol,
+                'email'      => $request->filled('correo') ? trim($request->correo) : null,
                 'activo'     => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
-            $rolLimpio = strtolower(trim($request->rol));
+            $rolNormalizado = strtolower(trim($request->rol));
 
-            // 1. Expediente Alumno
-            if ($rolLimpio === 'estudiante') {
-                DB::table('alumnos')->insert([
-                    'usuario_id'       => $usuarioId,
-                    'nombre'           => $request->nombre,
-                    'apellido_paterno' => $request->apellido_paterno,
-                    'apellido_materno' => $request->apellido_materno,
-                    'nombre_tutor'     => $request->nombre_tutor,
-                    'telefono_tutor'   => $request->telefono_tutor,
-                    'activo'           => 1,
-                ]);
-            }
-            // 2. Expediente Docente
-            elseif ($rolLimpio === 'docente') {
-                DB::table('docentes')->insert([
-                    'usuario_id'       => $usuarioId,
-                    'nombre'           => $request->nombre,
-                    'apellido_paterno' => $request->apellido_paterno,
-                    'apellido_materno' => $request->apellido_materno,
-                    'correo'           => $request->correo,
-                    'telefono'         => $request->telefono,
-                    'activo'           => 1,
-                ]);
-            }
-            // 3. Expediente Administrador (columnas: nombre, apaterno, amaterno, usuario_id)
-            elseif ($rolLimpio === 'administrador') {
-                DB::table('administrador')->insert([
-                    'usuario_id' => $usuarioId,
-                    'nombre'     => $request->nombre,
-                    'apaterno'   => $request->apellido_paterno,
-                    'amaterno'   => $request->apellido_materno,
-                ]);
+            // Inserción en la tabla según el esquema de la base de datos
+            switch ($rolNormalizado) {
+                case 'estudiante':
+                    DB::table('alumnos')->insert([
+                        'usuario_id'       => $usuarioId,
+                        'nombre'           => trim($request->nombre),
+                        'apellido_paterno' => trim($request->apellido_paterno),
+                        'apellido_materno' => trim($request->apellido_materno ?? ''),
+                        'nombre_tutor'     => trim($request->nombre_tutor ?? ''),
+                        'telefono_tutor'   => trim($request->telefono_tutor ?? ''),
+                        'activo'           => 1,
+                    ]);
+                    break;
+
+                case 'docente':
+                    DB::table('docentes')->insert([
+                        'usuario_id'       => $usuarioId,
+                        'nombre'           => trim($request->nombre),
+                        'apellido_paterno' => trim($request->apellido_paterno),
+                        'apellido_materno' => trim($request->apellido_materno ?? ''),
+                        'correo'           => trim($request->correo ?? ''),
+                        'telefono'         => trim($request->telefono ?? ''),
+                        'activo'           => 1,
+                    ]);
+                    break;
+
+                case 'administrador':
+                    DB::table('administrador')->insert([
+                        'usuario_id' => $usuarioId,
+                        'nombre'     => trim($request->nombre),
+                        'apaterno'   => trim($request->apellido_paterno),
+                        'amaterno'   => trim($request->apellido_materno ?? ''),
+                    ]);
+                    break;
+
+                case 'coordinador':
+                    DB::table('coordinador')->insert([
+                        'usuario_id' => $usuarioId,
+                        'nombre'     => trim($request->nombre),
+                        'apaterno'   => trim($request->apellido_paterno),
+                        'telefono'   => trim($request->telefono ?? ''),
+                    ]);
+                    break;
+
+                case 'orientador':
+                    DB::table('orientador')->insert([
+                        'usuario_id' => $usuarioId,
+                        'nombre'     => trim($request->nombre),
+                        'apaterno'   => trim($request->apellido_paterno),
+                        'telefono'   => trim($request->telefono ?? ''),
+                    ]);
+                    break;
+
+                case 'control escolar':
+                    DB::table('control_escolar')->insert([
+                        'usuario_id' => $usuarioId,
+                        'nombre'     => trim($request->nombre),
+                        'apaterno'   => trim($request->apellido_paterno),
+                        'telefono'   => trim($request->telefono ?? ''),
+                    ]);
+                    break;
             }
         });
 
-        return redirect()->route('usuarios.index')->with('success', 'Usuario y expediente registrados correctamente.');
+        return redirect()->route('usuarios.index')->with('success', 'Usuario y expediente institucional registrados correctamente.');
     }
 
-    /**
-     * Alterna el estatus del usuario entre Activo (1) y Suspendido (0).
-     */
     public function toggleStatus($id)
     {
         if (Auth::id() == $id) {
@@ -121,7 +194,6 @@ class UsuarioController extends Controller
         return redirect()->back()->with('success', "El usuario {$usuario->username} ha sido {$accion} correctamente.");
     }
 
-    
     public function updatePassword(Request $request, $id)
     {
         $request->validate([

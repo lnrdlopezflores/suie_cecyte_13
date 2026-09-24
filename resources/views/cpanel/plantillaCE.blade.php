@@ -223,13 +223,8 @@
                 <div>
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 block mb-2.5">Trámites y Certificación</span>
                     <nav class="space-y-1">
-                        <a href="#" 
-                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300">
-                            <span class="material-icons-round text-base">analytics</span>
-                            <span>Actas de Calificaciones</span>
-                        </a>
-                        <a href="#" 
-                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300">
+                        <a href="{{ route('ce.titulacion.index') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('ce.titulacion.*') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
                             <span class="material-icons-round text-base">assignment_turned_in</span>
                             <span>Expedientes de Titulación</span>
                         </a>

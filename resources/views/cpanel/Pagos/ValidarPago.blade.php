@@ -17,27 +17,38 @@
 
     <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 overflow-hidden h-full pb-4">
         
+        <!-- PANEL IZQUIERDO: VISOR DIGITAL -->
         <div class="lg:col-span-7 bg-slate-800 rounded-2xl border border-slate-700 shadow-inner flex flex-col overflow-hidden h-full">
             <div class="bg-slate-900 px-4 py-2 flex justify-between items-center border-b border-slate-700">
                 <span class="text-slate-400 font-mono text-[10px] flex items-center gap-1">
                     <span class="material-icons-round text-xs">picture_as_pdf</span> Documento Digital Alumno
                 </span>
-                <a href="{{ asset('storage/' . $pago->comprobante_url) }}" target="_blank" class="text-sky-400 hover:underline font-bold text-[11px] flex items-center gap-0.5">
+                <a href="{{ route('contador.pagos.comprobante', $pago->id) }}" target="_blank" class="text-sky-400 hover:underline font-bold text-[11px] flex items-center gap-0.5">
                     Abrir en pestaña nueva <span class="material-icons-round text-xs">open_in_new</span>
                 </a>
             </div>
             
-            <div class="flex-1 bg-slate-700/40 relative">
-                @if(pathinfo($pago->comprobante_url, PATHINFO_EXTENSION) == 'pdf')
-                    <embed src="{{ asset('storage/' . $pago->comprobante_url) }}" type="application/pdf" class="w-full h-full object-contain" />
+            <div class="flex-1 bg-slate-700/40 relative h-full">
+                @php
+                    $extension = strtolower(pathinfo($pago->comprobante_url, PATHINFO_EXTENSION));
+                @endphp
+
+                @if($extension === 'pdf')
+                    <iframe src="{{ route('contador.pagos.comprobante', $pago->id) }}#toolbar=1&navpanes=0" 
+                            class="w-full h-full border-0 absolute inset-0" 
+                            title="Comprobante de Pago en PDF">
+                    </iframe>
                 @else
                     <div class="w-full h-full overflow-auto flex items-center justify-center p-4">
-                        <img src="{{ asset('storage/' . $pago->comprobante_url) }}" alt="Voucher de banco" class="max-w-full max-h-full rounded-lg shadow-lg object-contain">
+                        <img src="{{ route('contador.pagos.comprobante', $pago->id) }}" 
+                             alt="Voucher de banco" 
+                             class="max-w-full max-h-full rounded-lg shadow-lg object-contain">
                     </div>
                 @endif
             </div>
         </div>
 
+        <!-- PANEL DERECHO: DETALLES Y ACCIÓN DE VALIDACIÓN -->
         <div class="lg:col-span-5 flex flex-col h-full overflow-y-auto space-y-4">
             
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-3xs space-y-3">
@@ -65,7 +76,7 @@
                 <div class="grid grid-cols-2 gap-3 text-[11px]">
                     <div>
                         <span class="text-slate-400 block font-medium">Monto Declarado:</span>
-                        <span class="font-mono font-black text-emerald-600 text-sm">${{ number_format($pago->monto, 2) }}</span>
+                        <span class="font-mono font-black text-emerald-600 text-sm">${{ is_numeric($pago->monto) ? number_format($pago->monto, 2) : $pago->monto }}</span>
                     </div>
                     <div>
                         <span class="text-slate-400 block font-medium">Referencia / Folio Banco:</span>

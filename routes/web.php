@@ -28,6 +28,8 @@ use App\Http\Controllers\GoogleAuthConfigController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\DocenteJuradoController;
 use App\Http\Controllers\AlumnoTitulacionDocumentoController;
+use App\Http\Controllers\ControlEscolarTitulacionController;
+use App\Http\Controllers\PersonalController;
 
 
 Route::get('/', function () {
@@ -61,10 +63,13 @@ Route::middleware(['auth', 'rol:administrador'])->group(function () {
     Route::patch('/admon/usuarios/{id}/password', [UsuarioController::class, 'updatePassword'])->name('usuarios.update-password');
     Route::get('/google-auth', [GoogleAuthConfigController::class, 'index'])->name('admin.google-auth.index');
     Route::post('/google-auth', [GoogleAuthConfigController::class, 'update'])->name('admin.google-auth.update');
+    Route::get('/personal', [PersonalController::class, 'index'])->name('admin.personal.index');
 });
 
 Route::middleware(['auth', 'rol:Estudiante'])->group(function () {
-    Route::resource('/alumno', AlumnoPortalController::class)->names('indexalumnos');
+    Route::resource('alumno', AlumnoPortalController::class)
+        ->names('indexalumnos')
+        ->except(['show']);
     Route::resource('/alumno/materias', AlumnoMateriasController::class)->names('indexmaterias');
     Route::resource('/alumno/pagos', AlumnoPagosController::class)->names('alumnoPagos');
     Route::post('/alumno/pagos/reportar', [AlumnoPagosController::class, 'store'])->name('alumno.pagos.store');
@@ -74,8 +79,8 @@ Route::middleware(['auth', 'rol:Estudiante'])->group(function () {
     Route::get('/alumno/titulacion/repositorio/{proyectoId}', [titulacionController::class, 'repositorio'])->name('titulacion.repositorio');
     Route::post('/alumno/titulacion/repositorio/guardar-entregable', [titulacionController::class, 'guardarEntregable'])->name('titulacion.guardar-entregable');
     Route::post('/alumno/titulacion/repositorio/guardar-video', [titulacionController::class, 'guardarVideo'])->name('titulacion.guardar-video');
-    Route::get('/alumno/titulacion/documentos', [AlumnoTitulacionDocumentoController::class, 'index'])->name('proceso.titulacion.index');
-    Route::post('/alumno/titulacion/documentos/subir', [AlumnoTitulacionDocumentoController::class, 'subirDocumento'])->name('alumno.titulacion.documentos.subir');
+    Route::get('/alumno/documentos', [AlumnoTitulacionDocumentoController::class, 'index'])->name('proceso.titulacion.index');
+    Route::post('/alumno/documentos/subir', [AlumnoTitulacionDocumentoController::class, 'subirDocumento'])->name('alumno.titulacion.documentos.subir');
 });
 
 Route::middleware(['auth', 'rol:Control Escolar'])->group(function () {
@@ -85,6 +90,8 @@ Route::middleware(['auth', 'rol:Control Escolar'])->group(function () {
     Route::post('/control-escolar/alumnos/asignar', [AlumnoController::class, 'asignarGrupo'])->name('alumnos.asignar-grupo');
     Route::resource('/ce/grupos', GrupoController::class)->names('grupos');
     Route::resource('/ce/carga-academica', CargaAcademicaController::class)->names('cargas');
+    Route::get('/revision', [ControlEscolarTitulacionController::class, 'index'])->name('ce.titulacion.index');
+    Route::post('/documentos/{documento}/evaluar', [ControlEscolarTitulacionController::class, 'evaluarDocumento'])->name('ce.titulacion.evaluar');
 });
 
 Route::middleware(['auth', 'rol:Docente'])->group(function () {
@@ -109,9 +116,20 @@ Route::middleware(['auth', 'rol:Coordinador'])->group(function(){
 
 
 
-Route::resource('/finanzas/pagos', ValidarPagoController::class)->names('contador.pagos');
-Route::get('/finanzas/pagos/{id}/revisar', [ValidarPagoController::class, 'revisar'])->name('contador.pagos.revisar');
-Route::post('/finanzas/pagos/{id}/validar', [ValidarPagoController::class, 'validar'])->name('contador.pagos.validar');
+Route::get('/finanzas/pagos', [ValidarPagoController::class, 'index'])
+        ->name('contador.pagos.index');
+
+    // Pantalla de revisión / conciliación (La que te dio error 404)
+    Route::get('/finanzas/pagos/{id}/revisar', [ValidarPagoController::class, 'revisar'])
+        ->name('contador.pagos.revisar');
+
+    // Acción de aprobar / validar el pago
+    Route::post('/finanzas/pagos/{id}/validar', [ValidarPagoController::class, 'validar'])
+        ->name('contador.pagos.validar');
+
+    // Stream del comprobante físico PDF/Imagen para el iframe
+    Route::get('/finanzas/pagos/{id}/comprobante', [ValidarPagoController::class, 'verComprobante'])
+        ->name('contador.pagos.comprobante');
 
 Route::middleware(['auth', 'rol:Orientador'])->group(function () {
     Route::get('/orientacion/asistencias', [AsistenciaController::class, 'reporteCritico'])->name('asistencias.criticas');

@@ -12,11 +12,10 @@
                 <span>Seguridad y Accesos</span>
             </div>
             <h2 class="text-xl md:text-2xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
-                Administración de Usuarios
+                Administración de Usuarios y Expedientes
             </h2>
         </div>
 
-        <!-- Mini Tarjetas de Estado -->
         <div class="flex items-center gap-3 shrink-0">
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-5 py-3.5 rounded-2xl shadow-3xs text-center">
                 <span class="text-[10px] text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-wider block">Registrados</span>
@@ -36,7 +35,7 @@
                 <span class="material-icons-round text-xl text-emerald-600 dark:text-emerald-400">check_circle</span>
                 <p>{{ session('success') }}</p>
             </div>
-            <button onclick="this.parentElement.remove()" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-100 cursor-pointer">
+            <button onclick="this.parentElement.remove()" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-900 cursor-pointer">
                 <span class="material-icons-round text-base">close</span>
             </button>
         </div>
@@ -48,7 +47,7 @@
                 <span class="material-icons-round text-xl text-rose-600 dark:text-rose-400">error</span>
                 <p>{{ session('error') }}</p>
             </div>
-            <button onclick="this.parentElement.remove()" class="text-rose-600 dark:text-rose-400 hover:text-rose-900 dark:hover:text-rose-100 cursor-pointer">
+            <button onclick="this.parentElement.remove()" class="text-rose-600 dark:text-rose-400 hover:text-rose-900 cursor-pointer">
                 <span class="material-icons-round text-base">close</span>
             </button>
         </div>
@@ -89,7 +88,7 @@
                         <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Rol Institucional *</label>
                         <select name="rol" id="selectRol" required onchange="cambiarFormularioRol(this.value)"
                                 class="w-full bg-slate-50 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 rounded-2xl p-3 font-semibold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-custom-primary focus:outline-hidden transition-all cursor-pointer">
-                            <option value="" disabled selected>Selecciona un rol...</option>
+                            <option value="" disabled {{ old('rol') ? '' : 'selected' }}>Selecciona un rol...</option>
                             <option value="Estudiante" {{ old('rol') == 'Estudiante' ? 'selected' : '' }}>Estudiante</option>
                             <option value="Docente" {{ old('rol') == 'Docente' ? 'selected' : '' }}>Docente</option>
                             <option value="Orientador" {{ old('rol') == 'Orientador' ? 'selected' : '' }}>Orientador</option>
@@ -115,36 +114,61 @@
 
                         <div>
                             <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Contraseña Inicial *</label>
-                            <input type="password" name="password" required 
+                            <input type="password" name="password" required minlength="6"
                                    class="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-xl p-3 font-medium focus:ring-2 focus:ring-custom-primary focus:outline-hidden transition-all" 
                                    placeholder="••••••••">
                         </div>
                     </div>
 
-                    <!-- Datos Personales (Aplicable a Alumno, Docente y Administrador) -->
+                    <!-- Datos Personales Base (Para Todos los Roles) -->
                     <div id="seccionPersonales" class="space-y-3.5 hidden">
                         <div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[11px] font-black uppercase tracking-wider">
                             <span class="material-icons-round text-sm text-custom-primary">badge</span>
-                            <span>Datos del Titular</span>
+                            <span id="tituloSeccionPersonales">Datos del Titular</span>
                         </div>
                         
                         <div>
                             <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre(s) *</label>
                             <input type="text" name="nombre" value="{{ old('nombre') }}" id="inputNombre"
-                                   class="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-xl p-3 font-medium focus:ring-2 focus:ring-custom-primary focus:outline-hidden transition-all">
+                                   class="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-xl p-3 font-medium focus:ring-2 focus:ring-custom-primary focus:outline-hidden transition-all"
+                                   placeholder="Ej: Leonardo">
                         </div>
 
-                        <div class="grid grid-cols-2 gap-2.5">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             <div>
                                 <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Apellido Paterno *</label>
                                 <input type="text" name="apellido_paterno" value="{{ old('apellido_paterno') }}" id="inputPaterno"
-                                       class="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-xl p-3 font-medium focus:ring-2 focus:ring-custom-primary focus:outline-hidden transition-all">
+                                       class="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-xl p-3 font-medium focus:ring-2 focus:ring-custom-primary focus:outline-hidden transition-all"
+                                       placeholder="Ej: López">
                             </div>
-                            <div>
+                            <div id="contenedorMaterno">
                                 <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Apellido Materno</label>
                                 <input type="text" name="apellido_materno" value="{{ old('apellido_materno') }}" id="inputMaterno"
-                                       class="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-xl p-3 font-medium focus:ring-2 focus:ring-custom-primary focus:outline-hidden transition-all">
+                                       class="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-xl p-3 font-medium focus:ring-2 focus:ring-custom-primary focus:outline-hidden transition-all"
+                                       placeholder="Ej: Sánchez">
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Contacto Personal Institucional (Docente, Coordinador, Orientador, Control Escolar) -->
+                    <div id="seccionContactoPersonal" class="space-y-3.5 p-4 bg-slate-50/90 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 rounded-2xl hidden transition-colors">
+                        <div class="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 text-[11px] font-black uppercase tracking-wider">
+                            <span class="material-icons-round text-sm text-custom-primary">contact_phone</span>
+                            <span>Contacto Institucional</span>
+                        </div>
+
+                        <div id="campoTelefonoPersonal">
+                            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Teléfono de Contacto</label>
+                            <input type="text" name="telefono" value="{{ old('telefono') }}" id="inputTelefono"
+                                   class="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-custom-primary focus:outline-hidden transition-all" 
+                                   placeholder="Ej: 2481234567">
+                        </div>
+
+                        <div id="campoCorreoPersonal">
+                            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Correo Institucional</label>
+                            <input type="email" name="correo" value="{{ old('correo') }}" id="inputCorreo"
+                                   class="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-custom-primary focus:outline-hidden transition-all" 
+                                   placeholder="personal@cecyte.edu.mx">
                         </div>
                     </div>
 
@@ -170,32 +194,10 @@
                         </div>
                     </div>
 
-                    <!-- Campos Específicos: Docentes -->
-                    <div id="seccionDocente" class="space-y-3.5 p-4 bg-amber-50/70 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/60 rounded-2xl hidden transition-colors">
-                        <div class="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 text-[11px] font-black uppercase tracking-wider">
-                            <span class="material-icons-round text-sm">contact_mail</span>
-                            <span>Contacto del Docente</span>
-                        </div>
-                        
-                        <div>
-                            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Correo Electrónico</label>
-                            <input type="email" name="correo" value="{{ old('correo') }}"
-                                   class="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-custom-primary focus:outline-hidden transition-all" 
-                                   placeholder="profesor@cecyte.edu.mx">
-                        </div>
-
-                        <div>
-                            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Teléfono Móvil</label>
-                            <input type="text" name="telefono" value="{{ old('telefono') }}"
-                                   class="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-custom-primary focus:outline-hidden transition-all" 
-                                   placeholder="Ej: 2481234567">
-                        </div>
-                    </div>
-
                     <div class="pt-2">
                         <button type="submit" class="w-full py-3.5 bg-custom-primary hover:bg-custom-primary-hover text-white font-extrabold text-xs rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-center gap-2">
                             <span class="material-icons-round text-base">how_to_reg</span>
-                            <span>Dar de Alta Usuario</span>
+                            <span>Registrar Usuario y Expediente</span>
                         </button>
                     </div>
                 </form>
@@ -208,7 +210,7 @@
                 
                 <div class="p-5 md:p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 flex justify-between items-center">
                     <div>
-                        <h3 class="text-xs font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">Bitácora de usuarios</h3>
+                        <h3 class="text-xs font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">Bitácora de usuarios y personal</h3>
                     </div>
                 </div>
 
@@ -217,8 +219,8 @@
                         <thead>
                             <tr class="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-400 text-[10px] font-black uppercase tracking-wider">
                                 <th class="p-4 pl-6">Usuario</th>
-                                <th class="p-4">Nombre Completo</th>
-                                <th class="p-4">Rol</th>
+                                <th class="p-4">Titular / Contacto</th>
+                                <th class="p-4">Rol Asignado</th>
                                 <th class="p-4 text-center">Estatus</th>
                                 <th class="p-4 text-center pr-6">Acciones</th>
                             </tr>
@@ -229,47 +231,67 @@
                                     $nom = $user->nombre ?? '';
                                     $pat = $user->apellido_paterno ?? '';
                                     $mat = $user->apellido_materno ?? '';
+                                    $tel = $user->telefono ?? '';
+
                                     try {
                                         if (is_string($nom) && (str_starts_with($nom, 'ey') || strlen($nom) > 50)) $nom = decrypt($nom);
                                         if (is_string($pat) && (str_starts_with($pat, 'ey') || strlen($pat) > 50)) $pat = decrypt($pat);
                                         if (is_string($mat) && (str_starts_with($mat, 'ey') || strlen($mat) > 50)) $mat = decrypt($mat);
+                                        if (is_string($tel) && (str_starts_with($tel, 'ey') || strlen($tel) > 50)) $tel = decrypt($tel);
                                     } catch (\Throwable $e) {}
 
                                     $iniciales = strtoupper(substr($nom ?: $user->username, 0, 1) . substr($pat ?: '', 0, 1));
-                                    $nombreCompleto = trim("$pat $mat $nom");
+                                    $nombreCompleto = trim("$nom $pat $mat");
                                 @endphp
-                                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors {{ !$user->activo ? 'bg-slate-50/60 dark:bg-slate-800/20 opacity-75' : '' }}">
-                                    
-                                    <!-- Identificador y Monograma -->
-                                    <td class="p-4 pl-6">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-custom-primary font-black flex items-center justify-center text-xs shrink-0 border border-slate-200 dark:border-slate-700 shadow-3xs">
-                                                {{ $iniciales ?: 'US' }}
-                                            </div>
-                                            <span class="font-mono font-black text-slate-900 dark:text-slate-100 tracking-wide">{{ $user->username }}</span>
-                                        </div>
-                                    </td>
-                                    
-                                    <!-- Nombre Completo -->
-                                    <td class="p-4">
-                                        @if($nombreCompleto)
-                                            <p class="font-bold text-slate-900 dark:text-slate-100 text-xs md:text-sm">{{ $nombreCompleto }}</p>
-                                        @else
-                                            <span class="text-slate-400 dark:text-slate-500 italic text-[11px]">Sin expediente vinculado</span>
-                                        @endif
-                                    </td>
-                                    
-                                    <!-- Rol -->
-                                    <td class="p-4">
-                                        <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border tracking-wider
-                                            {{ $user->rol == 'Estudiante' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900/60' : '' }}
-                                            {{ $user->rol == 'Docente' ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/60' : '' }}
-                                            {{ strtolower($user->rol) == 'administrador' ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/60' : '' }}
-                                            {{ !in_array(strtolower($user->rol), ['estudiante','docente','administrador']) ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700' : '' }}
-                                        ">
-                                            {{ $user->rol }}
-                                        </span>
-                                    </td>
+<tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors {{ !$user->activo ? 'bg-slate-50/60 dark:bg-slate-800/20 opacity-75' : '' }}">
+    
+    <!-- Identificador y Monograma -->
+    <td class="p-4 pl-6">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-custom-primary font-black flex items-center justify-center text-xs shrink-0 border border-slate-200 dark:border-slate-700 shadow-3xs">
+                {{ $user->iniciales ?? strtoupper(substr($user->username, 0, 2)) }}
+            </div>
+            <span class="font-mono font-black text-slate-900 dark:text-slate-100 tracking-wide">{{ $user->username }}</span>
+        </div>
+    </td>
+    
+    <!-- Nombre Completo y Teléfono -->
+    <td class="p-4">
+        @if(!empty($user->nombre_completo))
+            <p class="font-bold text-slate-900 dark:text-slate-100 text-xs md:text-sm leading-tight">
+                {{ $user->nombre_completo }}
+            </p>
+            @if(!empty($user->telefono_contacto))
+                <span class="text-[11px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
+                    <span class="material-icons-round text-xs">call</span> {{ $user->telefono_contacto }}
+                </span>
+            @endif
+        @else
+            <span class="text-slate-400 dark:text-slate-500 italic text-[11px]">
+                Sin expediente vinculado
+            </span>
+        @endif
+    </td>
+    
+    <!-- Rol Asignado -->
+    <td class="p-4">
+        @php
+            $rolKey = strtolower(trim($user->rol));
+            $badgeClass = match($rolKey) {
+                'estudiante'      => 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900/60',
+                'docente'         => 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/60',
+                'coordinador'     => 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/60',
+                'control escolar' => 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/60',
+                'orientador'      => 'bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-900/60',
+                'administrador'   => 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/60',
+                default           => 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+            };
+        @endphp
+        <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border tracking-wider {{ $badgeClass }}">
+            {{ $user->rol }}
+        </span>
+    </td>
+
                                     
                                     <!-- Estatus -->
                                     <td class="p-4 text-center">
@@ -403,42 +425,67 @@
 
 <script>
     function cambiarFormularioRol(rol) {
-        const secPersonales = document.getElementById('seccionPersonales');
-        const secEstudiante = document.getElementById('seccionEstudiante');
-        const secDocente    = document.getElementById('seccionDocente');
+        if (!rol) return;
+
+        const secPersonales       = document.getElementById('seccionPersonales');
+        const secEstudiante       = document.getElementById('seccionEstudiante');
+        const secContactoPersonal = document.getElementById('seccionContactoPersonal');
+        const contenedorMaterno   = document.getElementById('contenedorMaterno');
+        const campoTelefono       = document.getElementById('campoTelefonoPersonal');
+        const campoCorreo         = document.getElementById('campoCorreoPersonal');
         
-        const inputNombre   = document.getElementById('inputNombre');
-        const inputPaterno  = document.getElementById('inputPaterno');
-        const labelUser     = document.getElementById('labelUsername');
+        const inputNombre         = document.getElementById('inputNombre');
+        const inputPaterno        = document.getElementById('inputPaterno');
+        const labelUser           = document.getElementById('labelUsername');
+        const tituloPersonales    = document.getElementById('tituloSeccionPersonales');
 
-        secPersonales.classList.add('hidden');
+        // 1. Mostrar siempre datos personales básicos para todos los roles
+        secPersonales.classList.remove('hidden');
+        inputNombre.setAttribute('required', 'required');
+        inputPaterno.setAttribute('required', 'required');
+
+        // 2. Ocultar secciones condicionales por defecto
         secEstudiante.classList.add('hidden');
-        secDocente.classList.add('hidden');
+        secContactoPersonal.classList.add('hidden');
+        contenedorMaterno.classList.remove('hidden');
+        campoTelefono.classList.remove('hidden');
+        campoCorreo.classList.remove('hidden');
 
-        inputNombre.removeAttribute('required');
-        inputPaterno.removeAttribute('required');
+        const rolLimpio = rol.toLowerCase().trim();
 
-        const rolNormalizado = rol.toLowerCase();
-
-        if (rolNormalizado === 'estudiante') {
-            secPersonales.classList.remove('hidden');
+        if (rolLimpio === 'estudiante') {
             secEstudiante.classList.remove('hidden');
-            inputNombre.setAttribute('required', 'required');
-            inputPaterno.setAttribute('required', 'required');
             labelUser.innerText = 'Matrícula Oficial (Username) *';
-        } else if (rolNormalizado === 'docente') {
-            secPersonales.classList.remove('hidden');
-            secDocente.classList.remove('hidden');
-            inputNombre.setAttribute('required', 'required');
-            inputPaterno.setAttribute('required', 'required');
+            tituloPersonales.innerText = 'Datos del Alumno';
+        } 
+        else if (rolLimpio === 'docente') {
+            secContactoPersonal.classList.remove('hidden');
             labelUser.innerText = 'Clave de Docente (Username) *';
-        } else if (rolNormalizado === 'administrador') {
-            secPersonales.classList.remove('hidden');
-            inputNombre.setAttribute('required', 'required');
-            inputPaterno.setAttribute('required', 'required');
+            tituloPersonales.innerText = 'Datos del Docente';
+        } 
+        else if (rolLimpio === 'administrador') {
+            // administrador: nombre, apaterno, amaterno (sin telefono en su tabla)
+            secContactoPersonal.classList.remove('hidden');
+            campoTelefono.classList.add('hidden');
             labelUser.innerText = 'Identificador Admin (Username) *';
-        } else {
-            labelUser.innerText = 'Clave de Personal (Username) *';
+            tituloPersonales.innerText = 'Datos del Administrador';
+        } 
+        else if (['coordinador', 'orientador', 'control escolar'].includes(rolLimpio)) {
+            // coordinador, orientador y control_escolar: nombre, apaterno, telefono (sin amaterno)
+            contenedorMaterno.classList.add('hidden');
+            secContactoPersonal.classList.remove('hidden');
+            campoCorreo.classList.add('hidden');
+
+            if (rolLimpio === 'coordinador') {
+                labelUser.innerText = 'Identificador Coordinador (Username) *';
+                tituloPersonales.innerText = 'Datos del Coordinador';
+            } else if (rolLimpio === 'orientador') {
+                labelUser.innerText = 'Identificador Orientador (Username) *';
+                tituloPersonales.innerText = 'Datos del Orientador';
+            } else {
+                labelUser.innerText = 'Identificador Control Escolar (Username) *';
+                tituloPersonales.innerText = 'Datos de Control Escolar';
+            }
         }
     }
 

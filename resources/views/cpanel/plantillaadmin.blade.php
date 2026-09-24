@@ -254,7 +254,13 @@
                             <span class="material-icons-round text-base">badge</span>
                             <span>Plantilla Docente</span>
                         </a>
-                    </nav>
+                    </nav>  
+
+                    <a href="{{ route('admin.personal.index') }}" 
+                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('admin.personal.*') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
+                        <span class="material-icons-round text-base">groups</span>
+                        <span>Personal Administrativo</span>
+                    </a>
                 </div>
 
                 <!-- SECCIÓN 3: CONFIGURACIÓN -->
