@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -17,6 +18,10 @@ class AppServiceProvider extends ServiceProvider
     // app/Providers/AppServiceProvider.php
 public function boot(): void
 {
+    if ($this->app->environment('production')) {
+        URL::forceScheme('https');
+    }
+
     try {
         if (Schema::hasTable('configuraciones_sistema')) {
             $configs = DB::table('configuraciones_sistema')->pluck('valor', 'clave')->toArray();
