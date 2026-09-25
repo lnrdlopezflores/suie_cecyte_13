@@ -22,6 +22,10 @@ public function boot(): void
         URL::forceScheme('https');
     }
 
+    if (app()->environment('production') || config('app.env') === 'production') {
+            URL::forceScheme('https');
+        }
+
     try {
         if (Schema::hasTable('configuraciones_sistema')) {
             $configs = DB::table('configuraciones_sistema')->pluck('valor', 'clave')->toArray();
