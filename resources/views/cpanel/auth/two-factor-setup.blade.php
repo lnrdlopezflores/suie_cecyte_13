@@ -25,7 +25,7 @@
                     <span>Protección de Cuenta</span>
                 </div>
                 <h2 class="text-xl md:text-2xl font-black text-slate-900 dark:text-slate-100">
-                    Verificación en Dos Pasos (Google Authenticator)
+                    Verificación en Dos Pasos
                 </h2>
                 <p class="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
                     Añade una capa extra de seguridad a tu cuenta solicitando un código TOTP desde tu smartphone.
