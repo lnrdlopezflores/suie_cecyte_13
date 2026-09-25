@@ -41,6 +41,6 @@ class AlumnoPortalController extends Controller
             }
         }
 
-        return view('cpanel/alumnos/dashboard', compact('infoAlumno'));
+        return view('cpanel/Alumnos/dashboard', compact('infoAlumno'));
     }
 }

@@ -72,7 +72,7 @@ $alumnosPaginados->getCollection()->transform(function ($alumno) {
     return $alumno;
 });
 
-        return view('cpanel/alumnos/indexalumnos', ['alumnos' => $alumnosPaginados]);
+        return view('cpanel/Alumnos/indexalumnos', ['alumnos' => $alumnosPaginados]);
     }
 
     public function create()

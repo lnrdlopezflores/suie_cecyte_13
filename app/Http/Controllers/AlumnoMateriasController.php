@@ -63,6 +63,6 @@ class AlumnoMateriasController extends Controller
             }
         }
 
-        return view('cpanel/alumnos/materiaalumno', compact('materias', 'grupoInfo'));
+        return view('cpanel/Alumnos/materiaalumno', compact('materias', 'grupoInfo'));
     }
 }
