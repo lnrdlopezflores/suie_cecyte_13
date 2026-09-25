@@ -14,7 +14,7 @@
                 <span>Orientación Educativa • Modelo Estadístico</span>
             </div>
             <h2 class="text-xl font-black text-slate-900 dark:text-slate-100">
-                Modelo de Regresión Logística — Probabilidad de Deserción
+                Probabilidad de Deserción
             </h2>
             <p class="text-slate-500 dark:text-slate-400 text-xs">
                 Inferencia basada en la función sigmoide sobre la tasa de inasistencias y faltas acumuladas.

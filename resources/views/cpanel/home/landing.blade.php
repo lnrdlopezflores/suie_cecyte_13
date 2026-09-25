@@ -222,7 +222,7 @@
                 <div class="relative bg-slate-900 border border-slate-200/80 rounded-3xl overflow-hidden shadow-2xl aspect-4/3 w-full group">
                     <div id="carousel-slides" class="w-full h-full relative">
                         <div class="carousel-item absolute inset-0 opacity-100 transition-opacity duration-700 ease-in-out">
-                            <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800" alt="Instalaciones Plantel" class="w-full h-full object-cover">
+                            <img src="/assets/images/aula.jpeg" alt="Instalaciones Plantel" class="w-full h-full object-cover">
                             <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent p-6 sm:p-8 flex flex-col justify-end">
                                 <span class="text-[11px] text-slate-300 font-extrabold uppercase tracking-wider">Infraestructura de Vanguardia</span>
                                 <h4 class="text-white text-base sm:text-lg font-bold mt-1 leading-snug">Laboratorios equipados y aulas preparadas para el desarrollo tecnológico.</h4>

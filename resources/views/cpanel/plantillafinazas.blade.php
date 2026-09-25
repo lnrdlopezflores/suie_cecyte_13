@@ -215,8 +215,9 @@
                         </a>
 
                         <!-- 2. Registrar Cobro Directo -->
-                        <a href="#" 
-                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('contador.cobro-directo.*') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
+                        <!-- Registrar Cobro Directo -->
+                        <a href="{{ route('contador.cobro-directo.index') }}" 
+                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('contador.cobro-directo.*') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
                             <span class="material-icons-round text-base">point_of_sale</span>
                             <span>Registrar Cobro Directo</span>
                         </a>

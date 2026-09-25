@@ -32,6 +32,7 @@ use App\Http\Controllers\ControlEscolarTitulacionController;
 use App\Http\Controllers\PersonalController;
 use App\Http\Controllers\ReportesIngresosController;
 use App\Http\Controllers\OrientacionGraficasController;
+use App\Http\Controllers\CobroDirectoController;
 
 
 Route::get('/', function () {
@@ -120,10 +121,20 @@ Route::middleware(['auth', 'rol:Orientador'])->group(function () {
 });
 
 
+Route::middleware(['auth', 'rol:Finanzas'])->group(function () {
+    Route::get('/finanzas/pagos', [ValidarPagoController::class, 'index']) ->name('contador.pagos.index');
+    Route::get('/finanzas/pagos/{id}/revisar', [ValidarPagoController::class, 'revisar'])->name('contador.pagos.revisar');
+    Route::post('/finanzas/pagos/{id}/validar', [ValidarPagoController::class, 'validar'])->name('contador.pagos.validar');
+    Route::get('/finanzas/pagos/{id}/comprobante', [ValidarPagoController::class, 'verComprobante'])->name('contador.pagos.comprobante');
+    Route::get('/reportes', [ReportesIngresosController::class, 'index'])->name('contador.reportes.index');
+    // Pantalla de cobro directo
+    Route::get('/cobro-directo', [CobroDirectoController::class, 'index'])->name('contador.cobro-directo.index');
+    // Endpoint JSON para búsqueda dinámica de alumnos
+    Route::get('/cobro-directo/buscar-alumnos', [CobroDirectoController::class, 'buscarAlumnos'])->name('contador.cobro-directo.buscar');
+    // Procesar y guardar el cobro
+    Route::post('/cobro-directo/procesar', [CobroDirectoController::class, 'store'])->name('contador.cobro-directo.store');
+    // Vista imprimible del comprobante doble (Finanzas / Alumno)
+    Route::get('/cobro-directo/comprobante/{id}', [CobroDirectoController::class, 'imprimirComprobante'])->name('contador.cobro-directo.comprobante');
+});
 
-Route::get('/finanzas/pagos', [ValidarPagoController::class, 'index']) ->name('contador.pagos.index');
-Route::get('/finanzas/pagos/{id}/revisar', [ValidarPagoController::class, 'revisar'])->name('contador.pagos.revisar');
-Route::post('/finanzas/pagos/{id}/validar', [ValidarPagoController::class, 'validar'])->name('contador.pagos.validar');
-Route::get('/finanzas/pagos/{id}/comprobante', [ValidarPagoController::class, 'verComprobante'])->name('contador.pagos.comprobante');
-Route::get('/reportes', [ReportesIngresosController::class, 'index'])->name('contador.reportes.index');
 

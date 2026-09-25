@@ -96,6 +96,7 @@ class LoginController extends Controller
             'docente'         => redirect()->route('dashboardDocente.index'),
             'estudiante'      => redirect()->route('indexalumnos.index'),
             'administrador'   => redirect()->route('usuarios.index'),
+            'finanzas'        => redirect()->route('contador.reportes.index'),
             default           => redirect()->to('/'),
         };
     }
