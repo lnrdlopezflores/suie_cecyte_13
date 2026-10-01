@@ -5,6 +5,8 @@
         'docente'              => 'cpanel.plantilladocente',
         'control escolar'      => 'cpanel.plantillaCE',
         'coordinador'          => 'cpanel.plantillacoordinacion',
+        'orientador'           => 'cpanel.plantillaorientacion' ,
+        'finanzas'             => 'cpanel.plantillafinanzas',
         default                => 'cpanel.plantillaadmin',
     };
 @endphp

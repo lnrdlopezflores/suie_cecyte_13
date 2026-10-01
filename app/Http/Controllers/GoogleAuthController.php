@@ -179,7 +179,8 @@ class GoogleAuthController extends Controller
             'control escolar' => redirect()->route('cargas.index'),
             'docente'         => redirect()->route('docentes.index'),
             'estudiante'      => redirect()->route('indexalumnos.index'),
-            'orientador'      => redirect()->route('orientador.index'),
+            'orientador'      => redirect()->route('asistencias.criticas'),
+            'finanzas'        => redirect()->route('contador.reportes.index'),
             default           => redirect('/'),
         };
     }
