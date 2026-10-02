@@ -108,10 +108,10 @@ Route::middleware(['auth', 'rol:Docente'])->group(function () {
 Route::middleware(['auth', 'rol:Coordinador'])->group(function(){
     Route::resource('/coordinador/cargas', CoodinacionCargaController::class)->names('coordinador.cargas');
     Route::resource('/coordinador/proyectos', CoodinacionProyectoController::class)->names('coordinador.proyectos');
-    Route::get('/jurados/{carrera}', [JuradosController::class, 'carrera'])->name('coordinador.jurados.carrera');
-    Route::post('/jurados/guardar', [JuradosController::class, 'guardar'])->name('coordinador.jurados.guardar');
-    Route::post('/jurados/guardar-todos', [JuradosController::class, 'guardarTodos'])->name('coordinador.jurados.guardar-todos');
-    Route::get('/dashboard', [CoordinacionDashboardController::class, 'index'])->name('coordinador.dashboard');
+    Route::get('/coordinador/jurados/{carrera}', [JuradosController::class, 'carrera'])->name('coordinador.jurados.carrera');
+    Route::post('/coordinador/jurados/guardar', [JuradosController::class, 'guardar'])->name('coordinador.jurados.guardar');
+    Route::post('/coordinador/jurados/guardar-todos', [JuradosController::class, 'guardarTodos'])->name('coordinador.jurados.guardar-todos');
+    Route::get('/coordinador/dashboard', [CoordinacionDashboardController::class, 'index'])->name('coordinador.dashboard');
 });
 
 Route::middleware(['auth', 'rol:Orientador'])->group(function () {

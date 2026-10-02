@@ -32,6 +32,10 @@ class User extends Authenticatable
             'password' => 'hashed', 
         ];
     }
+    public function tieneCuentaGoogleVinculada(): bool
+{
+    return !empty($this->google_id);
+}
 
     public function docente()
     {

@@ -167,6 +167,14 @@
                         </span>
                     </div>
 
+                    @if(Route::has('2fa.setup') && !empty(auth()->user()->google_id))
+                        <a href="{{ route('2fa.setup') }}" 
+                        class="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                            <span class="material-icons-round text-base text-custom-primary">phonelink_lock</span>
+                            <span>Google Authenticator (2FA)</span>
+                        </a>
+                    @endif
+
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
                         <button type="submit" 

@@ -534,9 +534,14 @@
                 <span>Continuar con Google</span>
             </a>
 
-            <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-[11px] text-slate-500 leading-relaxed flex items-start gap-2.5">
-                <span class="material-icons-round text-base text-slate-600 shrink-0 mt-0.5">verified_user</span>
-                <p>Acceso cifrado y seguro para la comunidad educativa.</p>
+           <div class="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/80 text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed flex items-start gap-3 transition-colors">
+                <div class="w-7 h-7 rounded-xl bg-custom-primary/10 text-custom-primary flex items-center justify-center shrink-0 mt-0.5">
+                    <span class="material-icons-round text-base">verified_user</span>
+                </div>
+                <div class="space-y-0.5">
+                    <p class="font-bold text-slate-800 dark:text-slate-100">Acceso cifrado y seguro SUIE</p>
+                    <p class="text-slate-500 dark:text-slate-400">Plataforma resguardada para la comunidad educativa. Para un acceso más rápido y seguro, te sugerimos vincular tu cuenta institucional de Google.</p>
+                </div>
             </div>
         </div>
     </div>

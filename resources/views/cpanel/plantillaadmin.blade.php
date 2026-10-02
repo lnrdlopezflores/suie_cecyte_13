@@ -132,18 +132,12 @@
         
         <!-- Lado Derecho: Acciones y Dropdown de Usuario -->
         <div class="flex items-center space-x-3 md:space-x-4">
-            
-            <!-- Botón Ajustes de Color -->
-            <a href="{{ route('admin.colores.index') }}" title="Configuración de Colores y Apariencia"
-               class="p-2.5 text-slate-500 dark:text-slate-400 hover:text-custom-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700/80 shadow-3xs flex items-center justify-center">
-                <span class="material-icons-round text-xl">palette</span>
-            </a>
 
             <!-- Botón Alternar Modo Oscuro -->
-            <button id="btn-theme-toggle" type="button" aria-label="Cambiar tema"
-                    class="p-2.5 text-slate-500 dark:text-slate-400 hover:text-custom-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700/80 shadow-3xs">
-                <span id="theme-icon-light" class="material-icons-round text-xl hidden dark:block text-amber-400">light_mode</span>
-                <span id="theme-icon-dark" class="material-icons-round text-xl block dark:hidden text-slate-600">dark_mode</span>
+            <button id="btn-theme-toggle" type="button" aria-label="Cambiar tema" 
+                    class="p-1.5 sm:p-2.5 text-slate-500 dark:text-slate-400 hover:text-custom-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700/80 shadow-3xs">
+                <span id="theme-icon-light" class="material-icons-round text-lg sm:text-xl hidden dark:block text-amber-400">light_mode</span>
+                <span id="theme-icon-dark" class="material-icons-round text-lg sm:text-xl block dark:hidden text-slate-600">dark_mode</span>
             </button>
 
             <!-- Dropdown de Perfil -->
@@ -187,9 +181,9 @@
                         </a>
                     @endif
 
-                    @if(Route::has('2fa.setup'))
+                    @if(Route::has('2fa.setup') && !empty(auth()->user()->google_id))
                         <a href="{{ route('2fa.setup') }}" 
-                           class="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                        class="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
                             <span class="material-icons-round text-base text-custom-primary">phonelink_lock</span>
                             <span>Google Authenticator (2FA)</span>
                         </a>
