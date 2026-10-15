@@ -35,9 +35,19 @@
         </div>
 
         <div class="flex items-center gap-3">
+            @if($esJurado)
+                <a href="{{ route('docente.jurado.index') }}" 
+                class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2 cursor-pointer shrink-0">
+                    <span class="material-icons-round text-base">gavel</span>
+                    Dictaminar Proyectos
+                </a>
+            @endif
+
             <!-- BOTÓN: PROYECTOS ASESORADOS -->
-            <a href="{{ route('docente.titulacion.asesorados') }}" class="px-4 py-2.5 bg-[#841B44] hover:bg-[#681535] dark:bg-rose-800 dark:hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2 cursor-pointer shrink-0">
-                <span class="material-icons-round text-base">supervisor_account</span> Proyectos Asesorados
+            <a href="{{ route('docente.titulacion.asesorados') }}" 
+            class="px-4 py-2.5 bg-[#841B44] hover:bg-[#681535] dark:bg-rose-800 dark:hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2 cursor-pointer shrink-0">
+                <span class="material-icons-round text-base">supervisor_account</span> 
+                Proyectos Asesorados
             </a>
 
             <!-- INDICADOR DE CLASES -->

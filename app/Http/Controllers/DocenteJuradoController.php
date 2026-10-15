@@ -71,8 +71,8 @@ class DocenteJuradoController extends Controller
     public function dictaminar(Request $request, $proyectoId)
     {
         $request->validate([
-            'voto'        => 'required|in:Aprobado,Rechazado',
-            'comentarios' => 'nullable|string|max:1000',
+            'voto'          => 'required|in:Aprobado,Rechazado',
+            'observaciones' => 'nullable|string|max:1000',
         ]);
 
         $docente = DB::table('docentes')->where('usuario_id', Auth::id())->first();
