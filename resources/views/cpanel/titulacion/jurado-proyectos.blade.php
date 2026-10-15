@@ -1,19 +1,6 @@
 @extends('cpanel/plantilladocente')
 @section('title', 'Evaluación de Proyectos - Sínodo')
-@php
-    // Obtener el expediente del docente autenticado
-    $docenteAutenticado = \Illuminate\Support\Facades\DB::table('docentes')
-        ->where('usuario_id', \Illuminate\Support\Facades\Auth::id())
-        ->first();
 
-    // Verificar si existe como jurado en proyecto_jurados
-    $esJurado = false;
-    if ($docenteAutenticado) {
-        $esJurado = \Illuminate\Support\Facades\DB::table('proyecto_jurados')
-            ->where('docente_id', $docenteAutenticado->id)
-            ->exists();
-    }
-@endphp
 
 @section('content')
 <main class="h-[calc(100vh-4.5rem)] flex flex-col p-3 md:p-5 space-y-3 max-w-7xl mx-auto w-full transition-colors duration-200">

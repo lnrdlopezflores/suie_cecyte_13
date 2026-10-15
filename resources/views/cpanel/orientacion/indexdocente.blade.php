@@ -21,6 +21,20 @@
                 $nombreDocente = $rawNombre;
             }
         }
+
+    // Obtener el expediente del docente autenticado
+    $docenteAutenticado = \Illuminate\Support\Facades\DB::table('docentes')
+        ->where('usuario_id', \Illuminate\Support\Facades\Auth::id())
+        ->first();
+
+    // Verificar si existe como jurado en proyecto_jurados
+    $esJurado = false;
+    if ($docenteAutenticado) {
+        $esJurado = \Illuminate\Support\Facades\DB::table('proyecto_jurados')
+            ->where('docente_id', $docenteAutenticado->id)
+            ->exists();
+    }
+
     @endphp
 
     <!-- ENCABEZADO PRINCIPAL DE BIENVENIDA -->
