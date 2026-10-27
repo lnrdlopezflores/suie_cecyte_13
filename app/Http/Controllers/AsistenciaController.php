@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use Carbon\Carbon;
 
 class AsistenciaController extends Controller
 {
@@ -15,34 +16,48 @@ class AsistenciaController extends Controller
     public function tomarAsistencia($cargaId)
     {
         // 1. Obtener los datos de contexto del grupo y materia de esta carga académica
-        $carga = DB::table('carga_academica')
-            ->join('materias', 'carga_academica.materia_id', '=', 'materias.id')
-            ->join('grupos', 'carga_academica.grupo_id', '=', 'grupos.id')
-            ->select('carga_academica.id', 'materias.nombre', 'grupos.semestre', 'grupos.grupo', 'carga_academica.grupo_id')
-            ->where('carga_academica.id', $cargaId)
+        $carga = DB::table('carga_academica as ca')
+            ->leftJoin('materias as m', 'ca.materia_id', '=', 'm.id')
+            ->leftJoin('grupos as g', 'ca.grupo_id', '=', 'g.id')
+            ->where('ca.id', $cargaId)
+            ->select(
+                'ca.id',
+                'ca.id as carga_id', 
+                'm.nombre',
+                'm.nombre as materia', 
+                'g.id as grupo_id',
+                'g.semestre', 
+                'g.grupo', 
+                'g.especialidad'
+            )
             ->first();
 
+        // 2. Validación de seguridad para prevenir la pantalla de error
         if (!$carga) {
-            return redirect()->route('docente.dashboard')->with('error', 'Carga académica no válida.');
+            return back()->with('error', 'No se encontró la carga académica especificada (# ' . $cargaId . ').');
         }
 
-        // 2. Extraer alumnos asignados al grupo calculando faltas históricas y asistencias totales
-        $alumnos = DB::table('alumnos')
-            ->join('usuarios', 'alumnos.usuario_id', '=', 'usuarios.id')
+        // 3. Consulta de alumnos con subconsultas para totales de clases y faltas
+        $alumnos = DB::table('alumnos as a')
+            ->join('carga_academica as ca', 'a.grupo_id', '=', 'ca.grupo_id')
+            ->leftJoin('usuarios as u', 'a.usuario_id', '=', 'u.id')
+            ->where('ca.id', $cargaId)
             ->select(
-                'alumnos.id as alumno_id',
-                'alumnos.nombre',
-                'alumnos.apellido_paterno',
-                'alumnos.apellido_materno',
-                'usuarios.username', // Matrícula
-                DB::raw("(SELECT COUNT(*) FROM asistencias WHERE asistencias.alumno_id = alumnos.id AND asistencias.carga_academica_id = $cargaId) as clases_totales"),
-                DB::raw("(SELECT COUNT(*) FROM asistencias WHERE asistencias.alumno_id = alumnos.id AND asistencias.carga_academica_id = $cargaId AND asistencias.estatus = 'Falta') as faltas_acumuladas")
+                'a.id',
+                'a.id as alumno_id',
+                'u.username',
+                'a.nombre',
+                'a.apellido_paterno',
+                'a.apellido_materno',
+                DB::raw('(SELECT COUNT(DISTINCT fecha) FROM asistencias WHERE carga_academica_id = ' . (int)$cargaId . ') as clases_totales'),
+                DB::raw('(SELECT COUNT(*) FROM asistencias WHERE carga_academica_id = ' . (int)$cargaId . ' AND alumno_id = a.id AND estatus = "Falta") as faltas_acumuladas')
             )
-            ->where('alumnos.grupo_id', $carga->grupo_id)
-            ->orderBy('alumnos.apellido_paterno', 'asc')
+            ->orderBy('a.apellido_paterno')
+            ->orderBy('a.apellido_materno')
+            ->orderBy('a.nombre')
             ->get();
 
-        // 3. Descifrado dinámico de la lista de alumnos
+        // 4. Descifrado dinámico de la lista de alumnos
         $alumnos->transform(function ($alumno) {
             try {
                 if (is_string($alumno->nombre) && (strpos($alumno->nombre, 'ey') === 0 || strlen($alumno->nombre) > 50)) {
@@ -51,7 +66,7 @@ class AsistenciaController extends Controller
                     $alumno->apellido_materno = $alumno->apellido_materno ? decrypt($alumno->apellido_materno) : null;
                 }
             } catch (\Throwable $e) {
-                // Se preserva el valor original en texto plano
+                // Conservar texto plano si no está cifrado
             }
             return $alumno;
         });
@@ -73,6 +88,10 @@ class AsistenciaController extends Controller
         $asistenciasEnviadas = $request->input('asistencias', []);
 
         $carga = DB::table('carga_academica')->where('id', $cargaId)->first();
+        if (!$carga) {
+            return back()->with('error', 'Carga académica inválida.');
+        }
+
         $alumnoIds = DB::table('alumnos')->where('grupo_id', $carga->grupo_id)->pluck('id');
 
         DB::transaction(function () use ($alumnoIds, $asistenciasEnviadas, $cargaId, $fecha) {
@@ -103,13 +122,11 @@ class AsistenciaController extends Controller
     {
         $grupoId = $request->input('grupo_id');
 
-        // 1. Catálogo para el selector de grupos
         $gruposActivos = DB::table('grupos')
             ->where('estatus_egreso', 'Regular')
             ->orderBy('semestre', 'asc')
             ->get();
 
-        // 2. Query base de extracción matricular
         $query = DB::table('alumnos')
             ->join('usuarios', 'alumnos.usuario_id', '=', 'usuarios.id')
             ->join('grupos', 'alumnos.grupo_id', '=', 'grupos.id')
@@ -137,9 +154,7 @@ class AsistenciaController extends Controller
             $query->where('grupos.id', $grupoId);
         }
 
-        // 3. Procesar descifrado y filtros matemáticos sobre la colección
         $alumnosCollection = $query->get()->map(function($alumno) {
-            // Descifrado dinámico de la identidad del alumno y su tutor
             try {
                 if (is_string($alumno->nombre) && (strpos($alumno->nombre, 'ey') === 0 || strlen($alumno->nombre) > 50)) {
                     $alumno->nombre           = decrypt($alumno->nombre);
@@ -149,10 +164,9 @@ class AsistenciaController extends Controller
                     $alumno->telefono_tutor   = decrypt($alumno->telefono_tutor);
                 }
             } catch (\Throwable $e) {
-                // Conservar en texto plano si no se encuentra cifrado
+                // Conservar texto plano
             }
 
-            // Cálculo del porcentaje de asistencia
             if ($alumno->total_clases > 0) {
                 $asistencias = $alumno->total_clases - $alumno->total_faltas;
                 $alumno->porcentaje_asistencia = ($asistencias / $alumno->total_clases) * 100;
@@ -162,11 +176,9 @@ class AsistenciaController extends Controller
 
             return $alumno;
         })->filter(function($alumno) {
-            // Filtrar únicamente alumnos en condición crítica (< 80%)
             return $alumno->porcentaje_asistencia < 80.0;
         })->sortBy('porcentaje_asistencia');
 
-        // 4. Paginación manual de la colección
         $perPage = 15;
         $currentPage = Paginator::resolveCurrentPage() ?: 1;
         $currentItems = $alumnosCollection->slice(($currentPage - 1) * $perPage, $perPage)->values();
@@ -183,7 +195,7 @@ class AsistenciaController extends Controller
     }
 
     /**
-     * Construye y redirige la notificación vía WhatsApp para el tutor legal del estudiante.
+     * Construye y redirige la notificación vía WhatsApp para el tutor legal.
      */
     public function enviarAlertaTutor(Request $request)
     {
@@ -192,7 +204,6 @@ class AsistenciaController extends Controller
             'carga_id'  => ['required', 'integer', 'exists:carga_academica,id'],
         ]);
 
-        // 1. Extraer la información del estudiante y su tutor
         $datos = DB::table('alumnos')
             ->join('usuarios', 'alumnos.usuario_id', '=', 'usuarios.id')
             ->join('grupos', 'alumnos.grupo_id', '=', 'grupos.id')
@@ -213,7 +224,6 @@ class AsistenciaController extends Controller
             return redirect()->back()->withErrors(['error' => 'No se encontraron datos consistentes para la alerta.']);
         }
 
-        // 2. Descifrar información sensible antes de construir el mensaje
         try {
             if (is_string($datos->nombre) && (strpos($datos->nombre, 'ey') === 0 || strlen($datos->nombre) > 50)) {
                 $datos->nombre           = decrypt($datos->nombre);
@@ -222,10 +232,9 @@ class AsistenciaController extends Controller
                 $datos->telefono_tutor   = decrypt($datos->telefono_tutor);
             }
         } catch (\Throwable $e) {
-            // Mantiene el valor en texto plano
+            // Texto plano
         }
 
-        // 3. Calcular el porcentaje real de asistencias
         if ($datos->total_clases > 0) {
             $asistenciasEfectivas = $datos->total_clases - $datos->total_faltas;
             $porcentaje = round(($asistenciasEfectivas / $datos->total_clases) * 100, 1);
@@ -233,20 +242,147 @@ class AsistenciaController extends Controller
             $porcentaje = 100.0;
         }
 
-        // 4. Limpiar el teléfono para la API de WhatsApp
         $telefonoLimpio = preg_replace('/[^0-9]/', '', $datos->telefono_tutor);
         if (strlen($telefonoLimpio) == 10) {
-            $telefonoLimpio = '52' . $telefonoLimpio; // Prefijo de México
+            $telefonoLimpio = '52' . $telefonoLimpio;
         }
 
-        // 5. Construcción del texto institucional
         $mensaje = "Estimado(a) {$datos->nombre_tutor},\n\n";
         $mensaje .= "Le informamos desde la Oficina de Orientación Educativa del plantel que el alumno(a) *{$datos->nombre} {$datos->apellido_paterno}* (Matrícula: {$datos->username}), inscrito en el {$datos->semestre}° \"{$datos->grupo}\", registra actualmente un porcentaje crítico de asistencia del *{$porcentaje}%* en la asignatura de *{$datos->materia_nombre}* debido a {$datos->total_faltas} faltas acumuladas.\n\n";
         $mensaje .= "Le recordamos que el mínimo reglamentario para conservar el derecho a evaluación ordinaria es del *80%*. Solicitamos su valioso apoyo para conversar con su tutorado. Saludos cordiales.";
 
-        // 6. Redirección a WhatsApp API
         $urlWhatsApp = "https://wa.me/{$telefonoLimpio}?text=" . urlencode($mensaje);
 
         return redirect()->away($urlWhatsApp);
     }
+
+    /**
+     * Imprime el reporte mensual en cuadrícula de asistencias (• / /).
+     */
+public function imprimirReporteMensual(Request $request, $carga_id)
+{
+    $mes = (int) $request->get('mes', date('m'));
+    $anio = (int) $request->get('anio', date('Y'));
+    
+    // 1. Consultar Carga Académica
+    $carga = DB::table('carga_academica as ca')
+        ->leftJoin('materias as m', 'ca.materia_id', '=', 'm.id')
+        ->leftJoin('grupos as g', 'ca.grupo_id', '=', 'g.id')
+        ->where('ca.id', $carga_id)
+        ->select(
+            'ca.id',
+            'ca.id as carga_id', 
+            'm.nombre',
+            'm.nombre as materia', 
+            'g.semestre', 
+            'g.grupo', 
+            'g.especialidad'
+        )
+        ->first();
+
+    if (!$carga) {
+        return back()->with('error', 'No se encontró la carga académica especificada (# ' . $carga_id . ').');
+    }
+
+    // 2. Dias del mes seleccionado
+    $diasDelMes = Carbon::createFromDate($anio, $mes, 1)->daysInMonth;
+
+    // 3. Consultar alumnos trayendo 'id' (id de alumnos) y 'usuario_id' por si asistencias usa usuario_id
+    $alumnos = DB::table('alumnos as a')
+        ->join('carga_academica as ca', 'a.grupo_id', '=', 'ca.grupo_id')
+        ->leftJoin('usuarios as u', 'a.usuario_id', '=', 'u.id')
+        ->where('ca.id', $carga_id)
+        ->select(
+            'a.id as alumno_id', 
+            'a.usuario_id',
+            'u.username', 
+            'a.nombre', 
+            'a.apellido_paterno', 
+            'a.apellido_materno'
+        )
+        ->orderBy('a.apellido_paterno')
+        ->orderBy('a.apellido_materno')
+        ->orderBy('a.nombre')
+        ->get();
+
+    // 4. Desencriptación de nombres
+    foreach ($alumnos as $al) {
+        try {
+            if (is_string($al->nombre) && (str_starts_with($al->nombre, 'ey') || strlen($al->nombre) > 50)) {
+                $al->nombre = decrypt($al->nombre);
+            }
+            if (is_string($al->apellido_paterno) && (str_starts_with($al->apellido_paterno, 'ey') || strlen($al->apellido_paterno) > 50)) {
+                $al->apellido_paterno = decrypt($al->apellido_paterno);
+            }
+            if (is_string($al->apellido_materno) && (str_starts_with($al->apellido_materno, 'ey') || strlen($al->apellido_materno) > 50)) {
+                $al->apellido_materno = decrypt($al->apellido_materno);
+            }
+        } catch (\Throwable $e) {
+            $al->nombre = str_replace(' (Plain)', '', $al->nombre);
+            $al->apellido_paterno = str_replace(' (Plain)', '', $al->apellido_paterno);
+            $al->apellido_materno = str_replace(' (Plain)', '', $al->apellido_materno);
+        }
+    }
+
+    // 5. Consultar asistencias del mes flexibilizando la fecha en MySQL
+    $asistenciasRaw = DB::table('asistencias')
+        ->where('carga_academica_id', $carga_id)
+        ->whereMonth('fecha', $mes)
+        ->whereYear('fecha', $anio)
+        ->get();
+
+    // 6. Mapeo de IDs (Mapeamos tanto 'id' de alumno como 'usuario_id' hacia la misma fila)
+    $matrizAsistencias = [];
+    $totalesAsistencias = [];
+    $mapaAlumnos = []; // Mapea cualquier ID recibido hacia el 'alumno_id' principal
+
+    foreach ($alumnos as $al) {
+        $idPrincipal = (int) $al->alumno_id;
+        $matrizAsistencias[$idPrincipal] = array_fill(1, $diasDelMes, '');
+        $totalesAsistencias[$idPrincipal] = 0;
+
+        // Registrar equivalencias de IDs
+        $mapaAlumnos[$idPrincipal] = $idPrincipal;
+        if (!empty($al->usuario_id)) {
+            $mapaAlumnos[(int) $al->usuario_id] = $idPrincipal;
+        }
+    }
+
+    // 7. Llenar la matriz
+    foreach ($asistenciasRaw as $reg) {
+        $dia = (int) date('j', strtotime($reg->fecha));
+        $idReg = (int) $reg->alumno_id;
+
+        // Verificar si el ID existe en el mapa de equivalencias
+        if (isset($mapaAlumnos[$idReg])) {
+            $idTarget = $mapaAlumnos[$idReg];
+            $estatus = trim(mb_strtolower($reg->estatus));
+
+            if ($estatus === 'asistencia') {
+                $matrizAsistencias[$idTarget][$dia] = '•';
+                $totalesAsistencias[$idTarget]++;
+            } elseif ($estatus === 'falta') {
+                $matrizAsistencias[$idTarget][$dia] = '/';
+            } elseif ($estatus === 'justificado') {
+                $matrizAsistencias[$idTarget][$dia] = 'J';
+            } elseif ($estatus === 'retardo') {
+                $matrizAsistencias[$idTarget][$dia] = 'R';
+                $totalesAsistencias[$idTarget]++;
+            }
+        }
+    }
+
+    $nombreMes = Carbon::createFromDate($anio, $mes, 1)->translatedFormat('F Y');
+
+    return view('cpanel/reportes/reporteasistencia_pdf', compact(
+        'carga',
+        'alumnos',
+        'diasDelMes',
+        'matrizAsistencias',
+        'totalesAsistencias',
+        'nombreMes',
+        'mes',
+        'anio'
+    ));
+}
 }

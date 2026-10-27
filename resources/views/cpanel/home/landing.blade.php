@@ -125,7 +125,7 @@
             <div class="lg:col-span-6 space-y-6 text-center lg:text-left">
                 <span class="inline-flex items-center gap-2 px-4 py-1.5 bg-custom-light text-custom-primary text-xs font-black rounded-full border border-custom-primary/20 shadow-2xs">
                     <span class="material-icons-round text-sm">rocket_launch</span>
-                    <span>Tu bachillerato tecnológico en un solo lugar</span>
+                    <span>#OrgullosamenteCECyTE13</span>
                 </span>
                 
                 <h2 class="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight">

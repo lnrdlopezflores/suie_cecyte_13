@@ -103,6 +103,7 @@ Route::middleware(['auth', 'rol:Docente'])->group(function () {
     Route::post('/docente/titulacion/votar-jurado', [DocenteTitulacionController::class, 'votarJurado'])->name('docente.titulacion.votar-jurado');
     Route::get('/docente/jurado/proyectos', [DocenteJuradoController::class, 'index'])->name('docente.jurado.index');
     Route::post('/docente/jurado/proyectos/{proyecto}/dictaminar', [DocenteJuradoController::class, 'dictaminar'])->name('docente.jurado.dictaminar');
+    Route::get('/docente/asistencia/reporte/{carga_id}', [AsistenciaController::class, 'imprimirReporteMensual'])->name('asistencia.reporte');
 });
 
 Route::middleware(['auth', 'rol:Coordinador'])->group(function(){
