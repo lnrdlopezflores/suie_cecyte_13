@@ -1,21 +1,36 @@
 @extends('cpanel/plantilladocente')
 @section('title', 'Evaluación de Proyectos - Sínodo')
 
-
 @section('content')
 <main class="h-[calc(100vh-4.5rem)] flex flex-col p-3 md:p-5 space-y-3 max-w-7xl mx-auto w-full transition-colors duration-200">
 
-    @if(session('success'))
-        <div class="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 px-4 py-2 rounded-2xl text-xs font-bold flex items-center justify-between shadow-3xs shrink-0">
-            <div class="flex items-center gap-2">
-                <span class="material-icons-round text-base text-emerald-600">check_circle</span>
-                <span>{{ session('success') }}</span>
-            </div>
-            <button onclick="this.parentElement.remove()" class="text-emerald-700 hover:text-emerald-900 cursor-pointer">
-                <span class="material-icons-round text-sm">close</span>
-            </button>
+    <!-- BARRA SUPERIOR CON ALERTAS Y BOTÓN DE REGRESAR -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
+        
+        <!-- Alertas de éxito -->
+        <div class="flex-1">
+            @if(session('success'))
+                <div class="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 px-4 py-2 rounded-2xl text-xs font-bold flex items-center justify-between shadow-3xs">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-base text-emerald-600">check_circle</span>
+                        <span>{{ session('success') }}</span>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="text-emerald-700 hover:text-emerald-900 cursor-pointer">
+                        <span class="material-icons-round text-sm">close</span>
+                    </button>
+                </div>
+            @endif
         </div>
-    @endif
+
+        <!-- BOTÓN REGRESAR -->
+        <div class="flex justify-end shrink-0">
+            <a href="{{ route('dashboardDocente.index') }}" 
+               class="px-4 py-2 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-2xl border border-slate-200 dark:border-slate-800 shadow-3xs transition-all flex items-center gap-1.5 cursor-pointer">
+                <span class="material-icons-round text-base">arrow_back</span>
+                <span>Volver al Dashboard</span>
+            </a>
+        </div>
+    </div>
 
     <!-- PANEL PRINCIPAL SPLIT -->
     <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-0 overflow-hidden">
@@ -39,7 +54,7 @@
                         $isActive = $proyectoSeleccionado && $proyectoSeleccionado->id === $item->id;
                     @endphp
                     <a href="{{ route('docente.jurado.index', ['proyecto_id' => $item->id]) }}" 
-                    class="block p-4 transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50 {{ $isActive ? 'bg-slate-100/80 dark:bg-slate-800/90 border-l-4 border-custom-primary' : '' }}">
+                       class="block p-4 transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50 {{ $isActive ? 'bg-slate-100/80 dark:bg-slate-800/90 border-l-4 border-custom-primary' : '' }}">
                         
                         <div class="flex items-center justify-between gap-2 mb-1.5">
                             <span class="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500">

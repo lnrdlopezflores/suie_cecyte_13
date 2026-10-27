@@ -1,36 +1,38 @@
 @extends('cpanel/plantillaCE')
 @section('title', 'Estructura Escolar - Grupos')
 @section('content')
-<main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+<main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6 transition-colors duration-200">
 
+    <!-- TARJETAS DE MÉTRICAS -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-3xs flex items-center gap-4">
-            <div class="w-10 h-10 bg-indigo-50 text-indigo-700 rounded-xl flex items-center justify-center shrink-0">
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-3xs flex items-center gap-4 transition-colors">
+            <div class="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/60 rounded-xl flex items-center justify-center shrink-0">
                 <span class="material-icons-round">grid_view</span>
             </div>
             <div>
-                <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total de Grupos</p>
-                <p class="text-lg font-black text-slate-800">{{ $grupos->total() }} Secciones</p>
+                <p class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">Total de Grupos</p>
+                <p class="text-lg font-black text-slate-800 dark:text-slate-100">{{ $grupos->total() }} Secciones</p>
             </div>
         </div>
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-3xs flex items-center gap-4">
-            <div class="w-10 h-10 bg-amber-50 text-amber-700 rounded-xl flex items-center justify-center shrink-0">
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-3xs flex items-center gap-4 transition-colors">
+            <div class="w-10 h-10 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-900/60 rounded-xl flex items-center justify-center shrink-0">
                 <span class="material-icons-round">wb_sunny</span>
             </div>
             <div>
-                <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider font-sans">Ciclo Activo</p>
-                <p class="text-lg font-black text-slate-800">2026-A</p>
+                <p class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider font-sans">Ciclo Activo</p>
+                <p class="text-lg font-black text-slate-800 dark:text-slate-100">2026-2027</p>
             </div>
         </div>
     </div>
 
-    <div class="bg-white p-4 rounded-xl shadow-xs border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+    <!-- FILTROS Y ACCIONES -->
+    <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-xs border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors">
         
         <form action="{{ route('grupos.index') }}" method="GET" class="flex flex-wrap items-center gap-3 text-xs w-full md:w-auto">
             
             <div>
                 <select name="semestre" onchange="this.form.submit()" 
-                        class="bg-slate-50 border border-slate-300 rounded-xl p-2 font-semibold text-slate-700 focus:ring-1 focus:ring-[#841B44] focus:outline-hidden">
+                        class="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2 font-semibold text-slate-700 dark:text-slate-200 focus:ring-1 focus:ring-[#841B44] focus:outline-hidden cursor-pointer">
                     <option value="">Todos los Semestres</option>
                     @foreach(['1', '2', '3', '4', '5', '6'] as $sem)
                         <option value="{{ $sem }}" {{ request('semestre') == $sem ? 'selected' : '' }}>{{ $sem }}° Semestre</option>
@@ -40,7 +42,7 @@
 
             <div>
                 <select name="turno" onchange="this.form.submit()" 
-                        class="bg-slate-50 border border-slate-300 rounded-xl p-2 font-semibold text-slate-700 focus:ring-1 focus:ring-[#841B44] focus:outline-hidden">
+                        class="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2 font-semibold text-slate-700 dark:text-slate-200 focus:ring-1 focus:ring-[#841B44] focus:outline-hidden cursor-pointer">
                     <option value="">Todos los Turnos</option>
                     <option value="Matutino" {{ request('turno') == 'Matutino' ? 'selected' : '' }}>Matutino</option>
                     <option value="Vespertino" {{ request('turno') == 'Vespertino' ? 'selected' : '' }}>Vespertino</option>
@@ -48,24 +50,25 @@
             </div>
 
             @if(request('semestre') || request('turno'))
-                <a href="{{ route('grupos.index') }}" class="text-[#841B44] hover:underline font-semibold flex items-center gap-0.5">
+                <a href="{{ route('grupos.index') }}" class="text-[#841B44] dark:text-rose-400 hover:underline font-semibold flex items-center gap-0.5">
                     <span class="material-icons-round text-sm">clear</span> Limpiar filtros
                 </a>
             @endif
         </form>
 
         <div class="shrink-0 w-full md:w-auto text-right">
-            <a href="{{ route('grupos.create') }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#841B44] text-white text-xs font-bold rounded-xl shadow-2xs">
+            <a href="{{ route('grupos.create') }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#841B44] hover:bg-[#6b1536] dark:bg-rose-800 dark:hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-2xs transition-colors">
                 <span class="material-icons-round text-sm">add_box</span> Nuevo Grupo
             </a>
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+    <!-- TABLA DE GRUPOS -->
+    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                    <tr class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">
                         <th class="p-4 w-32 text-center">Grado y Grupo</th>
                         <th class="p-4">Especialidad Técnica</th>
                         <th class="p-4 text-center w-36">Turno asignado</th>
@@ -74,58 +77,60 @@
                         <th class="p-4 text-center w-24">Acciones</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-200 text-xs">
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
                     @forelse($grupos as $grupo)
-                        <tr class="hover:bg-slate-50/40 transition-colors {{ $grupo->estatus_egreso === 'Egresado' ? 'bg-slate-50/40 opacity-75' : '' }}">
+                        <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors {{ $grupo->estatus_egreso === 'Egresado' ? 'bg-slate-50/50 dark:bg-slate-950/40 opacity-75' : '' }}">
                            
                             <td class="p-4 text-center">
-                                <span class="bg-indigo-50 text-indigo-700 border border-indigo-100 text-xs font-black px-3 py-1 rounded-xl uppercase tracking-wide">
+                                <span class="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/60 text-xs font-black px-3 py-1 rounded-xl uppercase tracking-wide">
                                     {{ $grupo->semestre }}° "{{ $grupo->grupo }}"
                                 </span>
                             </td>
                             
                             <td class="p-4">
-                                <div class="font-bold text-slate-900 text-sm">
+                                <div class="font-bold text-slate-900 dark:text-slate-100 text-sm">
                                     {{ $grupo->especialidad }}
                                 </div>
                             </td>
                             
                             <td class="p-4 text-center">
                                 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border font-medium text-[11px]
-                                    {{ $grupo->turno == 'Matutino' ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-slate-100 text-slate-700 border-slate-300' }}
+                                    {{ $grupo->turno == 'Matutino' 
+                                        ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900/60' 
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700' }}
                                 ">
-                                    <span class="material-icons-round text-xs text-slate-400">
+                                    <span class="material-icons-round text-xs text-slate-400 dark:text-slate-500">
                                         {{ $grupo->turno == 'Matutino' ? 'wb_sunny' : 'nights_stay' }}
                                     </span>
                                     {{ $grupo->turno }}
                                 </span>
                             </td>
 
-                            <td class="p-4 text-center font-mono font-bold text-slate-600">
+                            <td class="p-4 text-center font-mono font-bold text-slate-600 dark:text-slate-300">
                                 {{ $grupo->ciclo_escolar }}
                             </td>
                             
                             <td class="p-4 text-center">
                                 @if($grupo->estatus_egreso === 'Egresado')
-                                    <span class="inline-flex items-center text-slate-600 font-semibold bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-sm">
+                                    <span class="inline-flex items-center text-slate-600 dark:text-slate-400 font-semibold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-sm">
                                         <span class="w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5"></span>Egresado
                                     </span>
                                 @else
-                                    <span class="inline-flex items-center text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-sm">
+                                    <span class="inline-flex items-center text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/60 px-2 py-0.5 rounded-sm">
                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>Abierto
                                     </span>
                                 @endif
                             </td>
 
                             <td class="p-4 text-center">
-                                <a href="{{ route('grupos.edit', $grupo->id) }}" class="p-1.5 hover:bg-slate-100 rounded-lg text-[#841B44] transition-colors inline-flex items-center" title="Editar Parámetros">
+                                <a href="{{ route('grupos.edit', $grupo->id) }}" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-[#841B44] dark:text-rose-400 transition-colors inline-flex items-center" title="Editar Parámetros">
                                     <span class="material-icons-round text-sm">edit</span>
                                 </a>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="p-8 text-center text-slate-400 font-medium">
+                            <td colspan="6" class="p-8 text-center text-slate-400 dark:text-slate-500 font-medium">
                                 <span class="material-icons-round text-2xl block mb-1">grid_view</span>
                                 No hay grupos registrados que coincidan con los filtros seleccionados.
                             </td>
@@ -136,7 +141,7 @@
         </div>
 
         @if($grupos->hasPages())
-            <div class="p-4 border-t border-slate-100 bg-slate-50/30">
+            <div class="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20">
                 {{ $grupos->appends(request()->query())->links() }}
             </div>
         @endif
