@@ -18,8 +18,23 @@
     @csrf
     <main class="flex-1 max-w-6xl w-full mx-auto p-6 md:p-8 space-y-8 text-sm md:text-base">
 
+        <!-- ALERTAS DE ERROR (validación o errores del controlador) -->
+        @if($errors->any())
+            <div class="bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-900 text-red-700 dark:text-rose-300 p-4 rounded-2xl text-sm">
+                @foreach($errors->all() as $error)
+                    <p>{{ $error }}</p>
+                @endforeach
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-900 text-red-700 dark:text-rose-300 p-4 rounded-2xl text-sm">
+                {{ session('error') }}
+            </div>
+        @endif
+
         <!-- PANEL DE CONTROL SUPERIOR -->
-        <div class="bg-white dark:bg-slate-900 p-6 md:p-7 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-6 transition-colors duration-200">
+        <div class="bg-white dark:bg-slate-900 p-6 md:p-7 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col xl:flex-row xl:items-center justify-between gap-6 transition-colors duration-200">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 flex-1 text-xs md:text-sm">
 
                 <!-- Materia y Grupo -->
@@ -30,6 +45,16 @@
                     </div>
                 </div>
 
+                <!-- Periodo Evaluatorio -->
+                <div>
+                    <label class="block font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider text-[11px] mb-2">Periodo Evaluatorio</label>
+                    <select name="periodo" class="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-2xl p-3.5 font-semibold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-600 focus:outline-hidden transition-all">
+                        <option value="Parcial 1">Parcial 1</option>
+                        <option value="Parcial 2">Parcial 2</option>
+                        <option value="Parcial 3">Parcial 3 / Final</option>
+                    </select>
+                </div>
+
                 <!-- Fecha de Registro -->
                 <div>
                     <label class="block font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider text-[11px] mb-2">Fecha de Registro</label>
@@ -38,8 +63,10 @@
             </div>
 
             <!-- BOTONES DE ACCIÓN -->
-            <div class="flex items-center gap-2.5 flex-wrap shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800">
-                <a href="{{ url('docente/index') }}" class="px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5 text-xs md:text-sm">
+            <div class="flex items-center gap-2.5 flex-wrap w-full xl:w-auto xl:shrink-0 pt-4 xl:pt-0 border-t xl:border-t-0 border-slate-100 dark:border-slate-800">
+
+                <!-- VOLVER AL DASHBOARD DOCENTE -->
+                <a href="{{ route('dashboardDocente.index') }}" class="px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5 text-xs md:text-sm">
                     <span class="material-icons-round text-base">arrow_back</span> Volver
                 </a>
 
