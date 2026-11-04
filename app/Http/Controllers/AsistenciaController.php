@@ -78,42 +78,55 @@ class AsistenciaController extends Controller
      * Procesa y guarda de forma masiva los estados de asistencia tomados por el docente.
      */
     public function guardarAsistencia(Request $request, $cargaId)
-    {
-        $request->validate([
-            'fecha' => 'required|date',
-            'periodo' => 'required|string',
-        ]);
+{
+    $request->validate([
+        'fecha' => 'required|date',
+    ]);
 
-        $fecha = $request->input('fecha');
-        $asistenciasEnviadas = $request->input('asistencias', []);
+    $fecha = $request->input('fecha');
+    $asistenciasEnviadas = $request->input('asistencias', []);
 
-        $carga = DB::table('carga_academica')->where('id', $cargaId)->first();
-        if (!$carga) {
-            return back()->with('error', 'Carga académica inválida.');
-        }
-
-        $alumnoIds = DB::table('alumnos')->where('grupo_id', $carga->grupo_id)->pluck('id');
-
-        DB::transaction(function () use ($alumnoIds, $asistenciasEnviadas, $cargaId, $fecha) {
-            foreach ($alumnoIds as $id) {
-                $estatus = array_key_exists($id, $asistenciasEnviadas) ? 'Asistencia' : 'Falta';
-
-                DB::table('asistencias')->updateOrInsert(
-                    [
-                        'carga_academica_id' => $cargaId,
-                        'alumno_id'          => $id,
-                        'fecha'              => $fecha
-                    ],
-                    [
-                        'estatus'            => $estatus,
-                        'observacion'        => $estatus === 'Falta' ? 'Pase de lista regular' : null
-                    ]
-                );
-            }
-        });
-
-        return redirect()->route('dashboardDocente.index')->with('success', 'El registro de asistencias se ha guardado exitosamente.');
+    $carga = DB::table('carga_academica')->where('id', $cargaId)->first();
+    if (!$carga) {
+        return back()->with('error', 'Carga académica inválida.');
     }
+
+    $alumnoIds = DB::table('alumnos')->where('grupo_id', $carga->grupo_id)->pluck('id');
+
+    DB::transaction(function () use ($alumnoIds, $asistenciasEnviadas, $cargaId, $fecha) {
+        foreach ($alumnoIds as $id) {
+            $estatusRecibido = $asistenciasEnviadas[$id] ?? 'Falta';
+
+            // Homologar 'Justificacion' al ENUM 'Justificado' de MySQL
+            $estatus = ($estatusRecibido === 'Justificacion') ? 'Justificado' : $estatusRecibido;
+
+            // Definir observación legible
+            $observacion = null;
+            if ($estatus === 'Falta') {
+                $observacion = 'Inasistencia registrada';
+            } elseif ($estatus === 'Justificado') {
+                $observacion = 'Falta justificada';
+            } elseif ($estatus === 'Retardo') {
+                $observacion = 'Retardo a clase';
+            }
+
+            DB::table('asistencias')->updateOrInsert(
+                [
+                    'carga_academica_id' => $cargaId,
+                    'alumno_id'          => $id,
+                    'fecha'              => $fecha
+                ],
+                [
+                    'estatus'            => $estatus,
+                    'observacion'        => $observacion
+                    // Se elimina 'updated_at' porque la tabla no incluye timestamps
+                ]
+            );
+        }
+    });
+
+    return redirect()->route('dashboardDocente.index')->with('success', 'El registro de asistencias se ha guardado exitosamente.');
+}
 
     /**
      * Genera el reporte de alumnos en condición crítica de inasistencias (<80%).
@@ -257,132 +270,130 @@ class AsistenciaController extends Controller
     }
 
     /**
-     * Imprime el reporte mensual en cuadrícula de asistencias (• / /).
+     * Imprime el reporte mensual en cuadrícula de asistencias (• / / / J / R).
      */
-public function imprimirReporteMensual(Request $request, $carga_id)
-{
-    $mes = (int) $request->get('mes', date('m'));
-    $anio = (int) $request->get('anio', date('Y'));
-    
-    // 1. Consultar Carga Académica
-    $carga = DB::table('carga_academica as ca')
-        ->leftJoin('materias as m', 'ca.materia_id', '=', 'm.id')
-        ->leftJoin('grupos as g', 'ca.grupo_id', '=', 'g.id')
-        ->where('ca.id', $carga_id)
-        ->select(
-            'ca.id',
-            'ca.id as carga_id', 
-            'm.nombre',
-            'm.nombre as materia', 
-            'g.semestre', 
-            'g.grupo', 
-            'g.especialidad'
-        )
-        ->first();
+    public function imprimirReporteMensual(Request $request, $carga_id)
+    {
+        $mes = (int) $request->get('mes', date('m'));
+        $anio = (int) $request->get('anio', date('Y'));
+        
+        // 1. Consultar Carga Académica
+        $carga = DB::table('carga_academica as ca')
+            ->leftJoin('materias as m', 'ca.materia_id', '=', 'm.id')
+            ->leftJoin('grupos as g', 'ca.grupo_id', '=', 'g.id')
+            ->where('ca.id', $carga_id)
+            ->select(
+                'ca.id',
+                'ca.id as carga_id', 
+                'm.nombre',
+                'm.nombre as materia', 
+                'g.semestre', 
+                'g.grupo', 
+                'g.especialidad'
+            )
+            ->first();
 
-    if (!$carga) {
-        return back()->with('error', 'No se encontró la carga académica especificada (# ' . $carga_id . ').');
-    }
-
-    // 2. Dias del mes seleccionado
-    $diasDelMes = Carbon::createFromDate($anio, $mes, 1)->daysInMonth;
-
-    // 3. Consultar alumnos trayendo 'id' (id de alumnos) y 'usuario_id' por si asistencias usa usuario_id
-    $alumnos = DB::table('alumnos as a')
-        ->join('carga_academica as ca', 'a.grupo_id', '=', 'ca.grupo_id')
-        ->leftJoin('usuarios as u', 'a.usuario_id', '=', 'u.id')
-        ->where('ca.id', $carga_id)
-        ->select(
-            'a.id as alumno_id', 
-            'a.usuario_id',
-            'u.username', 
-            'a.nombre', 
-            'a.apellido_paterno', 
-            'a.apellido_materno'
-        )
-        ->orderBy('a.apellido_paterno')
-        ->orderBy('a.apellido_materno')
-        ->orderBy('a.nombre')
-        ->get();
-
-    // 4. Desencriptación de nombres
-    foreach ($alumnos as $al) {
-        try {
-            if (is_string($al->nombre) && (str_starts_with($al->nombre, 'ey') || strlen($al->nombre) > 50)) {
-                $al->nombre = decrypt($al->nombre);
-            }
-            if (is_string($al->apellido_paterno) && (str_starts_with($al->apellido_paterno, 'ey') || strlen($al->apellido_paterno) > 50)) {
-                $al->apellido_paterno = decrypt($al->apellido_paterno);
-            }
-            if (is_string($al->apellido_materno) && (str_starts_with($al->apellido_materno, 'ey') || strlen($al->apellido_materno) > 50)) {
-                $al->apellido_materno = decrypt($al->apellido_materno);
-            }
-        } catch (\Throwable $e) {
-            $al->nombre = str_replace(' (Plain)', '', $al->nombre);
-            $al->apellido_paterno = str_replace(' (Plain)', '', $al->apellido_paterno);
-            $al->apellido_materno = str_replace(' (Plain)', '', $al->apellido_materno);
+        if (!$carga) {
+            return back()->with('error', 'No se encontró la carga académica especificada (# ' . $carga_id . ').');
         }
-    }
 
-    // 5. Consultar asistencias del mes flexibilizando la fecha en MySQL
-    $asistenciasRaw = DB::table('asistencias')
-        ->where('carga_academica_id', $carga_id)
-        ->whereMonth('fecha', $mes)
-        ->whereYear('fecha', $anio)
-        ->get();
+        // 2. Días del mes seleccionado
+        $diasDelMes = Carbon::createFromDate($anio, $mes, 1)->daysInMonth;
 
-    // 6. Mapeo de IDs (Mapeamos tanto 'id' de alumno como 'usuario_id' hacia la misma fila)
-    $matrizAsistencias = [];
-    $totalesAsistencias = [];
-    $mapaAlumnos = []; // Mapea cualquier ID recibido hacia el 'alumno_id' principal
+        // 3. Consultar alumnos
+        $alumnos = DB::table('alumnos as a')
+            ->join('carga_academica as ca', 'a.grupo_id', '=', 'ca.grupo_id')
+            ->leftJoin('usuarios as u', 'a.usuario_id', '=', 'u.id')
+            ->where('ca.id', $carga_id)
+            ->select(
+                'a.id as alumno_id', 
+                'a.usuario_id',
+                'u.username', 
+                'a.nombre', 
+                'a.apellido_paterno', 
+                'a.apellido_materno'
+            )
+            ->orderBy('a.apellido_paterno')
+            ->orderBy('a.apellido_materno')
+            ->orderBy('a.nombre')
+            ->get();
 
-    foreach ($alumnos as $al) {
-        $idPrincipal = (int) $al->alumno_id;
-        $matrizAsistencias[$idPrincipal] = array_fill(1, $diasDelMes, '');
-        $totalesAsistencias[$idPrincipal] = 0;
-
-        // Registrar equivalencias de IDs
-        $mapaAlumnos[$idPrincipal] = $idPrincipal;
-        if (!empty($al->usuario_id)) {
-            $mapaAlumnos[(int) $al->usuario_id] = $idPrincipal;
-        }
-    }
-
-    // 7. Llenar la matriz
-    foreach ($asistenciasRaw as $reg) {
-        $dia = (int) date('j', strtotime($reg->fecha));
-        $idReg = (int) $reg->alumno_id;
-
-        // Verificar si el ID existe en el mapa de equivalencias
-        if (isset($mapaAlumnos[$idReg])) {
-            $idTarget = $mapaAlumnos[$idReg];
-            $estatus = trim(mb_strtolower($reg->estatus));
-
-            if ($estatus === 'asistencia') {
-                $matrizAsistencias[$idTarget][$dia] = '•';
-                $totalesAsistencias[$idTarget]++;
-            } elseif ($estatus === 'falta') {
-                $matrizAsistencias[$idTarget][$dia] = '/';
-            } elseif ($estatus === 'justificado') {
-                $matrizAsistencias[$idTarget][$dia] = 'J';
-            } elseif ($estatus === 'retardo') {
-                $matrizAsistencias[$idTarget][$dia] = 'R';
-                $totalesAsistencias[$idTarget]++;
+        // 4. Desencriptación de nombres
+        foreach ($alumnos as $al) {
+            try {
+                if (is_string($al->nombre) && (str_starts_with($al->nombre, 'ey') || strlen($al->nombre) > 50)) {
+                    $al->nombre = decrypt($al->nombre);
+                }
+                if (is_string($al->apellido_paterno) && (str_starts_with($al->apellido_paterno, 'ey') || strlen($al->apellido_paterno) > 50)) {
+                    $al->apellido_paterno = decrypt($al->apellido_paterno);
+                }
+                if (is_string($al->apellido_materno) && (str_starts_with($al->apellido_materno, 'ey') || strlen($al->apellido_materno) > 50)) {
+                    $al->apellido_materno = decrypt($al->apellido_materno);
+                }
+            } catch (\Throwable $e) {
+                $al->nombre = str_replace(' (Plain)', '', $al->nombre);
+                $al->apellido_paterno = str_replace(' (Plain)', '', $al->apellido_paterno);
+                $al->apellido_materno = str_replace(' (Plain)', '', $al->apellido_materno);
             }
         }
+
+        // 5. Consultar asistencias del mes
+        $asistenciasRaw = DB::table('asistencias')
+            ->where('carga_academica_id', $carga_id)
+            ->whereMonth('fecha', $mes)
+            ->whereYear('fecha', $anio)
+            ->get();
+
+        // 6. Mapeo de IDs
+        $matrizAsistencias = [];
+        $totalesAsistencias = [];
+        $mapaAlumnos = [];
+
+        foreach ($alumnos as $al) {
+            $idPrincipal = (int) $al->alumno_id;
+            $matrizAsistencias[$idPrincipal] = array_fill(1, $diasDelMes, '');
+            $totalesAsistencias[$idPrincipal] = 0;
+
+            $mapaAlumnos[$idPrincipal] = $idPrincipal;
+            if (!empty($al->usuario_id)) {
+                $mapaAlumnos[(int) $al->usuario_id] = $idPrincipal;
+            }
+        }
+
+        // 7. Llenar la matriz interpretando todos los estatus
+        foreach ($asistenciasRaw as $reg) {
+            $dia = (int) date('j', strtotime($reg->fecha));
+            $idReg = (int) $reg->alumno_id;
+
+            if (isset($mapaAlumnos[$idReg])) {
+                $idTarget = $mapaAlumnos[$idReg];
+                $estatus = trim(mb_strtolower($reg->estatus));
+
+                if ($estatus === 'asistencia') {
+                    $matrizAsistencias[$idTarget][$dia] = '•';
+                    $totalesAsistencias[$idTarget]++;
+                } elseif ($estatus === 'falta') {
+                    $matrizAsistencias[$idTarget][$dia] = '/';
+                } elseif ($estatus === 'justificacion' || $estatus === 'justificado') {
+                    $matrizAsistencias[$idTarget][$dia] = 'J';
+                } elseif ($estatus === 'retardo') {
+                    $matrizAsistencias[$idTarget][$dia] = 'R';
+                    $totalesAsistencias[$idTarget]++;
+                }
+            }
+        }
+
+        $nombreMes = Carbon::createFromDate($anio, $mes, 1)->translatedFormat('F Y');
+
+        return view('cpanel/reportes/reporteasistencia_pdf', compact(
+            'carga',
+            'alumnos',
+            'diasDelMes',
+            'matrizAsistencias',
+            'totalesAsistencias',
+            'nombreMes',
+            'mes',
+            'anio'
+        ));
     }
-
-    $nombreMes = Carbon::createFromDate($anio, $mes, 1)->translatedFormat('F Y');
-
-    return view('cpanel/reportes/reporteasistencia_pdf', compact(
-        'carga',
-        'alumnos',
-        'diasDelMes',
-        'matrizAsistencias',
-        'totalesAsistencias',
-        'nombreMes',
-        'mes',
-        'anio'
-    ));
-}
 }

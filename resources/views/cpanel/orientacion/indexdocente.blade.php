@@ -65,10 +65,11 @@
             </a>
 
             <!-- INDICADOR DE CLASES -->
+            <!-- INDICADOR DE CLASES DE HOY (DINÁMICO) -->
             <div class="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl text-center shrink-0">
                 <p class="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">Clases de Hoy</p>
                 <p class="text-lg font-black text-slate-800 dark:text-slate-100">
-                    {{ $clasesHoy ?? '0' }} {{ Str::plural('Sesión', $clasesHoy ?? 0) }}
+                    {{ $clasesHoy }} {{ Str::plural('Sesión', $clasesHoy) }}
                 </p>
             </div>
         </div>

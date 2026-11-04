@@ -2,73 +2,250 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Lista de Asistencia - {{ $carga->materia }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUIE - Lista de Asistencia - {{ $carga->materia }}</title>
     <style>
         @page {
             size: letter landscape;
-            margin: 10mm;
+            margin: 8mm 10mm;
         }
+
+        :root {
+            --primary: #1e293b;
+            --primary-accent: #0f172a;
+            --border-color: #cbd5e1;
+            --bg-alt: #f8fafc;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 10px;
-            color: #1e293b;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-size: 9.5px;
+            color: #334155;
             margin: 0;
             padding: 0;
+            background-color: #ffffff;
         }
-        .header {
+
+        /* --- BOTÓN IMPRESIÓN --- */
+        .no-print {
             margin-bottom: 12px;
-            border-bottom: 2px solid #334155;
-            padding-bottom: 6px;
+            text-align: right;
         }
-        .header h2 {
+
+        .btn-print {
+            padding: 8px 18px;
+            background-color: #4f46e5;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 12px;
+            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .btn-print:hover {
+            background-color: #4338ca;
+        }
+
+        /* --- ENCABEZADO INSTITUCIONAL --- */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+
+        .header-title h1 {
             margin: 0;
-            font-size: 16px;
+            font-size: 15px;
+            font-weight: 900;
+            color: var(--primary-accent);
             text-transform: uppercase;
+            letter-spacing: -0.2px;
         }
-        .header p {
-            margin: 3px 0 0 0;
-            font-size: 11px;
+
+        .header-title p {
+            margin: 2px 0 0 0;
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .header-meta {
+            text-align: right;
+            font-size: 9px;
             color: #475569;
+            background-color: var(--bg-alt);
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
         }
+
+        .header-meta div {
+            margin-bottom: 2px;
+        }
+
+        .header-meta div:last-child {
+            margin-bottom: 0;
+        }
+
+        /* --- TABLA PRINCIPAL --- */
         table {
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
+            margin-bottom: 8px;
         }
+
         th, td {
-            border: 1px solid #94a3b8;
+            border: 1px solid var(--border-color);
             text-align: center;
             padding: 3px 1px;
-            height: 18px;
+            height: 19px;
+            vertical-align: middle;
             word-wrap: break-word;
         }
+
         th {
-            background-color: #cbd5e1;
-            font-size: 9px;
-            font-weight: bold;
+            background-color: #e2e8f0;
+            color: #0f172a;
+            font-size: 8.5px;
+            font-weight: 800;
+            line-height: 1.1;
         }
+
         th small {
             display: block;
             font-size: 7px;
-            font-weight: normal;
-            color: #475569;
+            font-weight: 700;
+            color: #64748b;
+            margin-top: 1px;
+            text-transform: uppercase;
         }
-        .th-np { width: 25px; }
-        .th-nombre { width: 180px; text-align: left; padding-left: 5px; }
-        .th-totales { width: 45px; background-color: #e2e8f0; font-weight: bold; }
-        .td-nombre { text-align: left; padding-left: 5px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .simbolo-asistencia { font-size: 14px; font-weight: bold; line-height: 1; }
-        .simbolo-falta { font-size: 12px; font-weight: bold; color: #dc2626; }
+
+        /* Anchos específicos de columnas */
+        .th-np { width: 22px; background-color: #cbd5e1; }
+        .th-nombre { width: 195px; text-align: left; padding-left: 6px; background-color: #cbd5e1; }
+        .th-totales { width: 42px; background-color: #cbd5e1; font-weight: 800; }
+
+        /* Filas y celdas */
+        tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .td-np {
+            font-weight: 700;
+            color: #64748b;
+            font-size: 8.5px;
+        }
+
+        .td-nombre {
+            text-align: left;
+            padding-left: 6px;
+            font-weight: 700;
+            color: #0f172a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .td-total {
+            font-weight: 900;
+            background-color: #f1f5f9;
+            color: #0f172a;
+            font-size: 10px;
+        }
+
+        /* Simbología de asistencias */
+        .simbolo-asistencia {
+            font-size: 13px;
+            font-weight: 900;
+            color: #0f172a;
+            line-height: 1;
+        }
+
+        .simbolo-falta {
+            font-size: 11px;
+            font-weight: 900;
+            color: #ef4444;
+        }
+
+        .simbolo-justificado {
+            font-size: 9px;
+            font-weight: 800;
+            color: #d97706;
+        }
+
+        .simbolo-retardo {
+            font-size: 9px;
+            font-weight: 800;
+            color: #2563eb;
+        }
+
+        /* --- PIE DE PÁGINA Y NOTAS --- */
+        .footer-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 10px;
+            padding-top: 4px;
+        }
+
+        .legend-box {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 8.5px;
+            color: #475569;
+            background-color: var(--bg-alt);
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .signature-box {
+            display: flex;
+            gap: 40px;
+            text-align: center;
+        }
+
+        .signature-line {
+            width: 160px;
+            border-top: 1px solid #94a3b8;
+            padding-top: 3px;
+            font-size: 8px;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+        }
 
         @media print {
-            .no-print { display: none; }
+            .no-print { display: none !important; }
+            body { background-color: transparent; }
+            tbody tr:nth-child(even) { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            th, .td-total, .header-meta, .legend-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
     </style>
 </head>
 <body>
 
     @php
-        // Solo días hábiles (lunes a viernes) del mes seleccionado
+        // Días hábiles (lunes a viernes) del mes
         $letrasDia = [1 => 'L', 2 => 'M', 3 => 'X', 4 => 'J', 5 => 'V'];
         $diasHabiles = [];
         for ($d = 1; $d <= $diasDelMes; $d++) {
@@ -79,26 +256,38 @@
         }
     @endphp
 
-    <div class="no-print" style="margin-bottom: 15px; text-align: right;">
-        <button onclick="window.print()" style="padding: 8px 16px; background: #4f46e5; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
-            🖨️ Imprimir / Guardar como PDF
+    {{-- BOTÓN DE IMPRESIÓN --}}
+    <div class="no-print">
+        <button onclick="window.print()" class="btn-print">
+            🖨️ Imprimir / Guardar en PDF
         </button>
     </div>
 
-    <div class="header">
-        <h2>Reporte de Asistencia Mensual - {{ strtoupper($nombreMes) }}</h2>
-        <p><strong>Materia:</strong> {{ $carga->materia }} | <strong>Grupo:</strong> {{ $carga->semestre }}° "{{ $carga->grupo }}" | <strong>Especialidad:</strong> {{ $carga->especialidad }}</p>
+    {{-- ENCABEZADO --}}
+    <div class="header-container">
+        <div class="header-title">
+            <h1>Reporte de Asistencia Mensual</h1>
+            <p><strong>Materia:</strong> {{ $carga->materia }}</p>
+        </div>
+        <div class="header-meta">
+            <div><strong>Mes:</strong> {{ strtoupper($nombreMes) }} {{ $anio }}</div>
+            <div><strong>Grupo:</strong> {{ $carga->semestre }}° "{{ $carga->grupo }}" | <strong>Especialidad:</strong> {{ $carga->especialidad }}</div>
+        </div>
     </div>
 
+    {{-- TABLA DE ASISTENCIAS --}}
     <table>
         <thead>
             <tr>
                 <th class="th-np">NP</th>
                 <th class="th-nombre">Nombre del Alumno</th>
                 @foreach($diasHabiles as $d => $letra)
-                    <th>{{ str_pad($d, 2, '0', STR_PAD_LEFT) }}<small>{{ $letra }}</small></th>
+                    <th>
+                        {{ str_pad($d, 2, '0', STR_PAD_LEFT) }}
+                        <small>{{ $letra }}</small>
+                    </th>
                 @endforeach
-                <th class="th-totales">Total Asist.</th>
+                <th class="th-totales">Total</th>
             </tr>
         </thead>
         <tbody>
@@ -107,7 +296,7 @@
                     $idAlumno = (int) $al->alumno_id;
                 @endphp
                 <tr>
-                    <td>{{ $index + 1 }}</td>
+                    <td class="td-np">{{ $index + 1 }}</td>
                     <td class="td-nombre">{{ $al->apellido_paterno }} {{ $al->apellido_materno }} {{ $al->nombre }}</td>
 
                     @foreach($diasHabiles as $d => $letra)
@@ -119,13 +308,17 @@
                                 <span class="simbolo-asistencia">•</span>
                             @elseif($val === '/')
                                 <span class="simbolo-falta">/</span>
+                            @elseif($val === 'J' || $val === 'j')
+                                <span class="simbolo-justificado">J</span>
+                            @elseif($val === 'R' || $val === 'r')
+                                <span class="simbolo-retardo">R</span>
                             @else
                                 {{ $val }}
                             @endif
                         </td>
                     @endforeach
 
-                    <td style="font-weight: bold; background-color: #f8fafc;">
+                    <td class="td-total">
                         {{ $totalesAsistencias[$idAlumno] ?? 0 }}
                     </td>
                 </tr>
@@ -133,12 +326,20 @@
         </tbody>
     </table>
 
-    <div style="margin-top: 15px; font-size: 9px; color: #64748b; display: flex; gap: 20px;">
-        <span><strong>Simbología:</strong></span>
-        <span>Asistencia: <strong>•</strong></span>
-        <span>Falta: <strong>/</strong></span>
-        <span>Justificado: <strong>J</strong></span>
-        <span>Retardo: <strong>R</strong></span>
+    {{-- PIE CON SIMBOLOGÍA Y FIRMAS --}}
+    <div class="footer-container">
+        <div class="legend-box">
+            <span style="font-weight: 800; color: #0f172a;">Simbología:</span>
+            <div class="legend-item"><span class="simbolo-asistencia">•</span> Asistencia</div>
+            <div class="legend-item"><span class="simbolo-falta">/</span> Falta</div>
+            <div class="legend-item"><span class="simbolo-justificado">J</span> Justificado</div>
+            <div class="legend-item"><span class="simbolo-retardo">R</span> Retardo</div>
+        </div>
+
+        <div class="signature-box">
+            <div class="signature-line">Firma del Docente</div>
+            <div class="signature-line">Vo.Bo. Control Escolar</div>
+        </div>
     </div>
 
 </body>

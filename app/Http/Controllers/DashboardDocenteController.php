@@ -5,51 +5,51 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class DashboardDocenteController extends Controller
 {
     public function index()
     {
-  // 1. Obtener el ID del docente vinculado al usuario logueado
         $user = Auth::user();
 
-    if ($user->docente) {
-        try {
-            if (is_string($user->docente->nombre) && (strpos($user->docente->nombre, 'ey') === 0 || strlen($user->docente->nombre) > 50)) {
-                $user->docente->nombre = decrypt($user->docente->nombre);
-            }
-        } catch (\Throwable $e) {
-            // Se mantiene el valor en texto plano si falla el decrypt
-        }
-    }
+        // 1. Obtener el registro del docente autenticado
+        $docente = DB::table('docentes')
+            ->where('usuario_id', $user->id)
+            ->first();
 
-        // 2. CORRECCIÓN DE LA CONSULTA: Traer la carga académica con sus relaciones unidas
-        // Corrección de la consulta en DashboardDocenteController.php (Línea 34)
-        $materias = DB::table('carga_academica')
-            ->join('materias', 'carga_academica.materia_id', '=', 'materias.id')
-            ->join('grupos', 'carga_academica.grupo_id', '=', 'grupos.id')
+        if (!$docente) {
+            $materias = collect();
+            $clasesHoy = 0;
+            return view('cpanel/orientacion/indexdocente', compact('materias', 'clasesHoy'));
+        }
+
+        // 2. Obtener el día de la semana actual en español (Ej: "Lunes", "Martes", "Miércoles")
+        $diaSemanaActual = Carbon::now()->locale('es')->isoFormat('dddd');
+        $diaSemanaActual = ucfirst($diaSemanaActual);
+
+        // 3. Consultar la carga académica (SIN 'ca.dias_clase' para evitar el error SQL)
+        $materias = DB::table('carga_academica as ca')
+            ->leftJoin('materias as m', 'ca.materia_id', '=', 'm.id')
+            ->leftJoin('grupos as g', 'ca.grupo_id', '=', 'g.id')
+            ->where('ca.docente_id', $docente->id)
             ->select(
-                'carga_academica.id',          // Cambiado '->' por '.'
-                'materias.nombre',
-                'grupos.semestre',
-                'grupos.grupo',
-                'grupos.especialidad',
-                'carga_academica.horario',
-                'carga_academica.aula'
+                'ca.id',
+                'm.nombre',
+                'g.semestre',
+                'g.grupo',
+                'g.especialidad',
+                'ca.horario',
+                'ca.aula',
+                DB::raw('(SELECT COUNT(DISTINCT alumno_id) FROM asistencias WHERE carga_academica_id = ca.id AND estatus = "Falta" GROUP BY alumno_id HAVING COUNT(*) > 4) as alumnos_criticos_count')
             )
-            ->where('carga_academica.docente_id', $user->docente->id) // Filtramos por el docente logueado
             ->get();
 
-        // 3. Simulación o cálculo de variables adicionales (opcional por ahora)
-        $clasesHoy = 3; 
+        // 4. Calcular dinámicamente las clases del día buscando el día de la semana dentro de 'horario'
+        $clasesHoy = $materias->filter(function ($materia) use ($diaSemanaActual) {
+            return !empty($materia->horario) && str_contains(mb_strtolower($materia->horario), mb_strtolower($diaSemanaActual));
+        })->count();
 
-        // Inyectamos a cada materia la propiedad de alumnos críticos en 0 de forma temporal 
-        // para evitar que arroje error la vista mientras desarrollas el módulo de orientación
-        foreach ($materias as $materia) {
-            $materia->alumnos_criticos_count = 0; 
-        } 
-
-        // Ojo: Asegúrate de que esta ruta coincida con tu vista real
-        return view('cpanel.orientacion.indexdocente', compact('materias', 'clasesHoy'));
+        return view('cpanel/orientacion/indexdocente', compact('materias', 'clasesHoy'));
     }
 }
