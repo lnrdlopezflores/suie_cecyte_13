@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class GrupoController extends Controller
 {
@@ -15,20 +16,16 @@ class GrupoController extends Controller
         $semestre = $request->input('semestre');
         $turno = $request->input('turno');
 
-        // Inicializar consulta sobre la tabla grupos
         $query = DB::table('grupos');
 
-        // Filtro por semestre si está definido
         if (!empty($semestre)) {
             $query->where('semestre', $semestre);
         }
 
-        // Filtro por turno si está definido
         if (!empty($turno)) {
             $query->where('turno', $turno);
         }
 
-        // Ordenamos por semestre ascendente y grupo alfabéticamente (Ej: 1A, 1B, 2A...)
         $grupos = $query->orderBy('semestre', 'asc')
                         ->orderBy('grupo', 'asc')
                         ->paginate(15);
@@ -44,17 +41,31 @@ class GrupoController extends Controller
     /**
      * Guarda el grupo en la base de datos aplicando las validaciones pertinentes.
      */
-   public function store(Request $request)
+    public function store(Request $request)
     {
         $request->merge(['grupo' => strtoupper($request->input('grupo'))]);
 
         $request->validate([
             'semestre'       => ['required', 'in:1,2,3,4,5,6'],
-            'grupo'          => ['required', 'string', 'max:1'],
+            'grupo'          => [
+                'required', 
+                'string', 
+                'max:1',
+                // Validación para evitar registros duplicados de grupo
+                Rule::unique('grupos')->where(function ($query) use ($request) {
+                    return $query->where('semestre', $request->input('semestre'))
+                                 ->where('grupo', $request->input('grupo'))
+                                 ->where('especialidad', $request->input('especialidad'))
+                                 ->where('turno', $request->input('turno'))
+                                 ->where('ciclo_escolar', $request->input('ciclo_escolar'));
+                })
+            ],
             'especialidad'   => ['required', 'string', 'max:100'],
             'turno'          => ['required', 'in:Matutino,Vespertino'],
             'ciclo_escolar'  => ['required', 'string', 'max:15'],
-            'estatus_egreso' => ['required', 'in:Regular,Egresado'], // Validación del nuevo campo
+            'estatus_egreso' => ['required', 'in:Regular,Egresado'],
+        ], [
+            'grupo.unique'   => 'Ya existe un grupo registrado con el mismo semestre, letra, especialidad, turno y ciclo escolar.',
         ]);
 
         DB::table('grupos')->insert([
@@ -62,8 +73,8 @@ class GrupoController extends Controller
             'grupo'          => $request->input('grupo'),
             'especialidad'   => $request->input('especialidad'),
             'turno'          => $request->input('turno'),
-            'ciclo_escolar'  => $request->input('ciclo_escolar'),
-            'estatus_egreso' => $request->input('estatus_egreso'), // Guardado
+            'ciclo_escolar'  => strtoupper($request->input('ciclo_escolar')),
+            'estatus_egreso' => $request->input('estatus_egreso'),
         ]);
 
         return redirect()
@@ -73,7 +84,6 @@ class GrupoController extends Controller
 
     public function edit($id)
     {
-        // Recuperamos el grupo por su ID único
         $grupo = DB::table('grupos')->where('id', $id)->first();
 
         if (!$grupo) {
@@ -84,13 +94,13 @@ class GrupoController extends Controller
     }
 
     /**
-     * Actualiza unicamente el campo semestre en la base de datos.
+     * Actualiza únicamente el campo semestre y parámetros en la base de datos.
      */
     public function update(Request $request, $id)
     {
         $request->validate([
-            'semestre'      => ['required', 'in:1,2,3,4,5,6'],
-            'ciclo_escolar' => ['required', 'string', 'max:15'],
+            'semestre'       => ['required', 'in:1,2,3,4,5,6'],
+            'ciclo_escolar'  => ['required', 'string', 'max:15'],
             'estatus_egreso' => ['required', 'in:Regular,Egresado'],
         ]);
 
