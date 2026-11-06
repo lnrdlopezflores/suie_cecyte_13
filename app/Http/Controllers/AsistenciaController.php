@@ -78,55 +78,54 @@ class AsistenciaController extends Controller
      * Procesa y guarda de forma masiva los estados de asistencia tomados por el docente.
      */
     public function guardarAsistencia(Request $request, $cargaId)
-{
-    $request->validate([
-        'fecha' => 'required|date',
-    ]);
+    {
+        $request->validate([
+            'fecha' => 'required|date',
+        ]);
 
-    $fecha = $request->input('fecha');
-    $asistenciasEnviadas = $request->input('asistencias', []);
+        $fecha = $request->input('fecha');
+        $asistenciasEnviadas = $request->input('asistencias', []);
 
-    $carga = DB::table('carga_academica')->where('id', $cargaId)->first();
-    if (!$carga) {
-        return back()->with('error', 'Carga académica inválida.');
-    }
-
-    $alumnoIds = DB::table('alumnos')->where('grupo_id', $carga->grupo_id)->pluck('id');
-
-    DB::transaction(function () use ($alumnoIds, $asistenciasEnviadas, $cargaId, $fecha) {
-        foreach ($alumnoIds as $id) {
-            $estatusRecibido = $asistenciasEnviadas[$id] ?? 'Falta';
-
-            // Homologar 'Justificacion' al ENUM 'Justificado' de MySQL
-            $estatus = ($estatusRecibido === 'Justificacion') ? 'Justificado' : $estatusRecibido;
-
-            // Definir observación legible
-            $observacion = null;
-            if ($estatus === 'Falta') {
-                $observacion = 'Inasistencia registrada';
-            } elseif ($estatus === 'Justificado') {
-                $observacion = 'Falta justificada';
-            } elseif ($estatus === 'Retardo') {
-                $observacion = 'Retardo a clase';
-            }
-
-            DB::table('asistencias')->updateOrInsert(
-                [
-                    'carga_academica_id' => $cargaId,
-                    'alumno_id'          => $id,
-                    'fecha'              => $fecha
-                ],
-                [
-                    'estatus'            => $estatus,
-                    'observacion'        => $observacion
-                    // Se elimina 'updated_at' porque la tabla no incluye timestamps
-                ]
-            );
+        $carga = DB::table('carga_academica')->where('id', $cargaId)->first();
+        if (!$carga) {
+            return back()->with('error', 'Carga académica inválida.');
         }
-    });
 
-    return redirect()->route('dashboardDocente.index')->with('success', 'El registro de asistencias se ha guardado exitosamente.');
-}
+        $alumnoIds = DB::table('alumnos')->where('grupo_id', $carga->grupo_id)->pluck('id');
+
+        DB::transaction(function () use ($alumnoIds, $asistenciasEnviadas, $cargaId, $fecha) {
+            foreach ($alumnoIds as $id) {
+                $estatusRecibido = $asistenciasEnviadas[$id] ?? 'Falta';
+
+                // Homologar 'Justificacion' al ENUM 'Justificado' de MySQL
+                $estatus = ($estatusRecibido === 'Justificacion') ? 'Justificado' : $estatusRecibido;
+
+                // Definir observación legible
+                $observacion = null;
+                if ($estatus === 'Falta') {
+                    $observacion = 'Inasistencia registrada';
+                } elseif ($estatus === 'Justificado') {
+                    $observacion = 'Falta justificada';
+                } elseif ($estatus === 'Retardo') {
+                    $observacion = 'Retardo a clase';
+                }
+
+                DB::table('asistencias')->updateOrInsert(
+                    [
+                        'carga_academica_id' => $cargaId,
+                        'alumno_id'          => $id,
+                        'fecha'              => $fecha
+                    ],
+                    [
+                        'estatus'            => $estatus,
+                        'observacion'        => $observacion
+                    ]
+                );
+            }
+        });
+
+        return redirect()->route('dashboardDocente.index')->with('success', 'El registro de asistencias se ha guardado exitosamente.');
+    }
 
     /**
      * Genera el reporte de alumnos en condición crítica de inasistencias (<80%).
@@ -360,7 +359,7 @@ class AsistenciaController extends Controller
             }
         }
 
-        // 7. Llenar la matriz interpretando todos los estatus
+        // 7. Llenar la matriz e incrementar ponderación (Asistencia/Justificado +1, Retardo +0.5)
         foreach ($asistenciasRaw as $reg) {
             $dia = (int) date('j', strtotime($reg->fecha));
             $idReg = (int) $reg->alumno_id;
@@ -371,14 +370,15 @@ class AsistenciaController extends Controller
 
                 if ($estatus === 'asistencia') {
                     $matrizAsistencias[$idTarget][$dia] = '•';
-                    $totalesAsistencias[$idTarget]++;
+                    $totalesAsistencias[$idTarget] += 1;
                 } elseif ($estatus === 'falta') {
                     $matrizAsistencias[$idTarget][$dia] = '/';
                 } elseif ($estatus === 'justificacion' || $estatus === 'justificado') {
                     $matrizAsistencias[$idTarget][$dia] = 'J';
+                    $totalesAsistencias[$idTarget] += 1; // Justificación suma 1 punto completo
                 } elseif ($estatus === 'retardo') {
                     $matrizAsistencias[$idTarget][$dia] = 'R';
-                    $totalesAsistencias[$idTarget]++;
+                    $totalesAsistencias[$idTarget] += 0.5; // Retardo suma 0.5 puntos
                 }
             }
         }

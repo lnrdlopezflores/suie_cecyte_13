@@ -319,21 +319,20 @@
                     @endforeach
 
                     <td class="td-total">
-                        {{ $totalesAsistencias[$idAlumno] ?? 0 }}
+                        {{ isset($totalesAsistencias[$idAlumno]) ? (float)$totalesAsistencias[$idAlumno] : 0 }}
                     </td>
                 </tr>
             @endforeach
         </tbody>
     </table>
 
-    {{-- PIE CON SIMBOLOGÍA Y FIRMAS --}}
     <div class="footer-container">
         <div class="legend-box">
             <span style="font-weight: 800; color: #0f172a;">Simbología:</span>
-            <div class="legend-item"><span class="simbolo-asistencia">•</span> Asistencia</div>
-            <div class="legend-item"><span class="simbolo-falta">/</span> Falta</div>
-            <div class="legend-item"><span class="simbolo-justificado">J</span> Justificado</div>
-            <div class="legend-item"><span class="simbolo-retardo">R</span> Retardo</div>
+            <div class="legend-item"><span class="simbolo-asistencia">•</span> Asistencia (+1)</div>
+            <div class="legend-item"><span class="simbolo-falta">/</span> Falta (0)</div>
+            <div class="legend-item"><span class="simbolo-justificado">J</span> Justificado (+1)</div>
+            <div class="legend-item"><span class="simbolo-retardo">R</span> Retardo (+0.5)</div>
         </div>
 
         <div class="signature-box">
