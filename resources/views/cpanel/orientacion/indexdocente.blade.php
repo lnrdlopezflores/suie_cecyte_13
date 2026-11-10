@@ -22,23 +22,20 @@
             }
         }
 
-    // Obtener el expediente del docente autenticado
     $docenteAutenticado = \Illuminate\Support\Facades\DB::table('docentes')
         ->where('usuario_id', \Illuminate\Support\Facades\Auth::id())
         ->first();
 
-    // Verificar si existe como jurado en proyecto_jurados
     $esJurado = false;
     if ($docenteAutenticado) {
         $esJurado = \Illuminate\Support\Facades\DB::table('proyecto_jurados')
             ->where('docente_id', $docenteAutenticado->id)
             ->exists();
     }
-
     @endphp
 
     <!-- ENCABEZADO PRINCIPAL DE BIENVENIDA -->
-    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between sm:items-center gap-4 transition-colors duration-200">
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800 flex flex-col xl:flex-row justify-between xl:items-center gap-4 transition-colors duration-200">
         <div class="space-y-1">
             <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100">
                 ¡Bienvenido de vuelta, {{ $nombreDocente }}!
@@ -48,10 +45,10 @@
             </p>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2.5 flex-wrap">
             @if($esJurado)
                 <a href="{{ route('docente.jurado.index') }}" 
-                class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2 cursor-pointer shrink-0">
+                   class="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer shrink-0">
                     <span class="material-icons-round text-base">gavel</span>
                     Dictaminar Proyectos
                 </a>
@@ -59,16 +56,22 @@
 
             <!-- BOTÓN: PROYECTOS ASESORADOS -->
             <a href="{{ route('docente.titulacion.asesorados') }}" 
-            class="px-4 py-2.5 bg-[#841B44] hover:bg-[#681535] dark:bg-rose-800 dark:hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2 cursor-pointer shrink-0">
+               class="px-3.5 py-2.5 bg-[#841B44] hover:bg-[#681535] dark:bg-rose-800 dark:hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer shrink-0">
                 <span class="material-icons-round text-base">supervisor_account</span> 
                 Proyectos Asesorados
             </a>
 
-            <!-- INDICADOR DE CLASES -->
+            <!-- BOTÓN NUEVO: DESCARGAR HORARIO -->
+            <a href="{{ route('docente.horario.pdf') }}" target="_blank"
+               class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer shrink-0">
+                <span class="material-icons-round text-base">print</span> 
+                Descargar Horario
+            </a>
+
             <!-- INDICADOR DE CLASES DE HOY (DINÁMICO) -->
-            <div class="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl text-center shrink-0">
+            <div class="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 px-4 py-1.5 rounded-xl text-center shrink-0">
                 <p class="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">Clases de Hoy</p>
-                <p class="text-lg font-black text-slate-800 dark:text-slate-100">
+                <p class="text-base font-black text-slate-800 dark:text-slate-100">
                     {{ $clasesHoy }} {{ Str::plural('Sesión', $clasesHoy) }}
                 </p>
             </div>
@@ -111,7 +114,7 @@
                         </h3>
                         <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5 flex items-center">
                             <span class="material-icons-round text-sm text-slate-400 dark:text-slate-500 mr-1">groups</span> 
-                            Grupo {{ $materia->grupo }} • {{ $materia->especialidad }}
+                            Grupo {{ $materia->grupo }} - {{ $materia->especialidad }}
                         </p>
                     </div>
 

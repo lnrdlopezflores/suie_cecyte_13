@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use ZipArchive;
+
 
 class ControlEscolarTitulacionController extends Controller
 {
@@ -130,5 +133,93 @@ class ControlEscolarTitulacionController extends Controller
             if (str_starts_with($val, 'ey') || strlen($val) > 50) return decrypt($val);
         } catch (\Throwable $e) {}
         return str_replace(' (Plain)', '', $val);
+    }
+
+    public function descargarZip($alumnoId)
+    {
+        // 1. Obtener datos del alumno
+        $alumno = DB::table('alumnos as a')
+            ->leftJoin('usuarios as u', 'a.usuario_id', '=', 'u.id')
+            ->leftJoin('grupos as g', 'a.grupo_id', '=', 'g.id')
+            ->select('a.id', 'u.username as matricula', 'a.nombre', 'a.apellido_paterno', 'a.apellido_materno')
+            ->where('a.id', $alumnoId)
+            ->first();
+
+        if (!$alumno) {
+            return back()->with('error', 'El alumno especificado no existe.');
+        }
+
+        // Descifrar nombres si están encriptados
+        try {
+            if (is_string($alumno->nombre) && (str_starts_with($alumno->nombre, 'ey') || strlen($alumno->nombre) > 50)) {
+                $alumno->nombre           = decrypt($alumno->nombre);
+                $alumno->apellido_paterno = decrypt($alumno->apellido_paterno);
+                $alumno->apellido_materno = $alumno->apellido_materno ? decrypt($alumno->apellido_materno) : '';
+            }
+        } catch (\Throwable $e) {
+            // Conservar texto plano
+        }
+
+        // 2. Consultar la tabla correcta: documentos_titulacion
+        $documentos = DB::table('documentos_titulacion')
+            ->where('alumno_id', $alumnoId)
+            ->whereNotNull('ruta_archivo')
+            ->get();
+
+        if ($documentos->isEmpty()) {
+            return back()->with('error', 'El alumno no cuenta con documentos subidos para descargar.');
+        }
+
+        // 3. Catálogo mapeado exactamente a los ENUMs de tu tabla documentos_titulacion
+        $catalogo = [
+            'Reporte'                     => 'Reporte_Proyecto',
+            'Presentacion'                => 'Presentacion_Proyecto',
+            'Video'                       => 'Video_Evidencia',
+            'Certificado_Secundaria'     => 'Certificado_Secundaria',
+            'Constancia_Liberacion_SS'    => 'Constancia_Servicio_Social',
+            'Acta_Nacimiento'             => 'Acta_Nacimiento',
+            'Certificado_Bachillerato'    => 'Certificado_Bachillerato',
+            'CURP'                        => 'CURP',
+            'Acta_Recepción_Profesional'  => 'Acta_Recepcion_Profesional',
+        ];
+
+        // 4. Crear el archivo ZIP temporal
+        $zip = new ZipArchive();
+        $nombreLimpio = preg_replace('/[^A-Za-z0-9_-]/', '_', "Expediente_{$alumno->matricula}_{$alumno->nombre}_{$alumno->apellido_paterno}");
+        $zipFileName = "{$nombreLimpio}.zip";
+        $tempDir = storage_path('app/public/temp');
+        $zipPath = "{$tempDir}/{$zipFileName}";
+
+        if (!file_exists($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
+            $archivosAgregados = 0;
+
+            foreach ($documentos as $doc) {
+                if (Storage::disk('public')->exists($doc->ruta_archivo)) {
+                    $absolutePath = Storage::disk('public')->path($doc->ruta_archivo);
+                    
+                    $etiqueta = $catalogo[$doc->tipo_documento] ?? $doc->tipo_documento;
+                    $ext = pathinfo($absolutePath, PATHINFO_EXTENSION) ?: 'pdf';
+                    $nombreEnZip = "{$etiqueta}_v{$doc->version}.{$ext}";
+
+                    $zip->addFile($absolutePath, $nombreEnZip);
+                    $archivosAgregados++;
+                }
+            }
+
+            $zip->close();
+
+            if ($archivosAgregados === 0) {
+                return back()->with('error', 'Los archivos físicos no fueron encontrados en el servidor.');
+            }
+
+            // 5. Descargar y eliminar el temporal
+            return response()->download($zipPath)->deleteFileAfterSend(true);
+        }
+
+        return back()->with('error', 'No se pudo generar el archivo ZIP comprimido.');
     }
 }

@@ -52,4 +52,48 @@ class DashboardDocenteController extends Controller
 
         return view('cpanel/orientacion/indexdocente', compact('materias', 'clasesHoy'));
     }
+
+    public function descargarHorarioPdf()
+{
+    $user = Auth::user();
+    
+    $docente = DB::table('docentes')
+        ->where('usuario_id', $user->id)
+        ->first();
+
+    if (!$docente) {
+        return back()->with('error', 'No se encontró el registro docente.');
+    }
+
+    // Nombre descifrado del docente
+    $nombreDocente = $docente->nombre;
+    if (is_string($nombreDocente) && (str_starts_with($nombreDocente, 'ey') || strlen($nombreDocente) > 50)) {
+        try {
+            $nombreDocente = decrypt($nombreDocente);
+        } catch (\Throwable $e) {
+            $nombreDocente = str_replace(' (Plain)', '', $nombreDocente);
+        }
+    }
+
+    // Cargas académicas asignadas
+    $cargas = DB::table('carga_academica as ca')
+        ->leftJoin('materias as m', 'ca.materia_id', '=', 'm.id')
+        ->leftJoin('grupos as g', 'ca.grupo_id', '=', 'g.id')
+        ->where('ca.docente_id', $docente->id)
+        ->select(
+            'ca.id',
+            'm.nombre as materia',
+            'm.clave',
+            'g.semestre',
+            'g.grupo',
+            'g.especialidad',
+            'ca.horario',
+            'ca.aula'
+        )
+        ->get();
+
+    $diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+
+    return view('cpanel/reportes/horario_pdf', compact('nombreDocente', 'cargas', 'diasSemana'));
+}
 }

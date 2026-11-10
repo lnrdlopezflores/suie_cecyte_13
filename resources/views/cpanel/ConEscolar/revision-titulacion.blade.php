@@ -22,6 +22,13 @@
                 <span>{{ session('success') }}</span>
             </div>
         @endif
+
+        @if(session('error'))
+            <div class="bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-3xs">
+                <span class="material-icons-round text-base text-rose-600">error</span>
+                <span>{{ session('error') }}</span>
+            </div>
+        @endif
     </div>
 
     <!-- PANEL PRINCIPAL SPLIT -->
@@ -99,7 +106,7 @@
         <div class="lg:col-span-8 flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden min-h-0">
             @if($alumnoSeleccionado)
 
-                <!-- Cabecera de Alumno y Selector de Documentos -->
+                <!-- Cabecera de Alumno, Acciones y Selector de Documentos -->
                 <div class="p-4 bg-slate-50/90 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700/80 shrink-0 space-y-3">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div>
@@ -110,9 +117,20 @@
                                 {{ $alumnoSeleccionado->nombre_completo }}
                             </h3>
                         </div>
-                        <span class="text-xs text-slate-500 font-bold bg-white dark:bg-slate-800 px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
-                            {{ $alumnoSeleccionado->especialidad }} ({{ $alumnoSeleccionado->grupo }})
-                        </span>
+                        
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span class="text-xs text-slate-500 font-bold bg-white dark:bg-slate-800 px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                                {{ $alumnoSeleccionado->especialidad }} ({{ $alumnoSeleccionado->grupo }})
+                            </span>
+
+                            <!-- BOTÓN DESCARGAR EXPEDIENTE ZIP -->
+                            <a href="{{ route('ce.titulacion.descargarZip', $alumnoSeleccionado->id) }}" 
+                               class="px-3 py-1.5 rounded-xl font-extrabold text-xs text-white bg-indigo-600 hover:bg-indigo-700 shadow-xs transition-colors flex items-center gap-1.5"
+                               title="Descargar todos los documentos en formato ZIP">
+                                <span class="material-icons-round text-base">folder_zip</span>
+                                <span class="hidden md:inline">Descargar ZIP</span>
+                            </a>
+                        </div>
                     </div>
 
                     <!-- Pestañas horizontales de los documentos del alumno -->

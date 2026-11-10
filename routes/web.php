@@ -92,6 +92,7 @@ Route::middleware(['auth', 'rol:Control Escolar'])->group(function () {
     Route::resource('/ce/carga-academica', CargaAcademicaController::class)->names('cargas');
     Route::get('/revision', [ControlEscolarTitulacionController::class, 'index'])->name('ce.titulacion.index');
     Route::post('/documentos/{documento}/evaluar', [ControlEscolarTitulacionController::class, 'evaluarDocumento'])->name('ce.titulacion.evaluar');
+    Route::get('/ce/titulacion/descargar-zip/{alumno_id}', [ControlEscolarTitulacionController::class, 'descargarZip'])->name('ce.titulacion.descargarZip');
 });
 
 Route::middleware(['auth', 'rol:Docente'])->group(function () {
@@ -104,6 +105,7 @@ Route::middleware(['auth', 'rol:Docente'])->group(function () {
     Route::get('/docente/jurado/proyectos', [DocenteJuradoController::class, 'index'])->name('docente.jurado.index');
     Route::post('/docente/jurado/proyectos/{proyecto}/dictaminar', [DocenteJuradoController::class, 'dictaminar'])->name('docente.jurado.dictaminar');
     Route::get('/docente/asistencia/reporte/{carga_id}', [AsistenciaController::class, 'imprimirReporteMensual'])->name('asistencia.reporte');
+    Route::get('/docente/horario/pdf', [DashboardDocenteController::class, 'descargarHorarioPdf'])->name('docente.horario.pdf');
 });
 
 Route::middleware(['auth', 'rol:Coordinador'])->group(function(){
