@@ -132,7 +132,7 @@
                         <div>
                             <label for="inputNombre" class="block font-bold text-slate-800 dark:text-slate-200 mb-1.5">Nombre(s) *</label>
                             <input type="text" name="nombre" value="{{ old('nombre') }}" id="inputNombre"
-                                   class="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-2 border-slate-300 dark:border-slate-700 rounded-xl p-3 font-medium focus:ring-4 focus:ring-custom-primary/20 focus:border-custom-primary transition-all"
+                                   class="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-2 border-slate-300 dark:border-slate-700 rounded-xl p-3 font-medium focus:ring-4 focus:ring-custom-primary/20 focus:border-custom-primary transition-all" 
                                    placeholder="Ej: Leonardo">
                         </div>
 
@@ -140,13 +140,13 @@
                             <div>
                                 <label for="inputPaterno" class="block font-bold text-slate-800 dark:text-slate-200 mb-1.5">Apellido Paterno *</label>
                                 <input type="text" name="apellido_paterno" value="{{ old('apellido_paterno') }}" id="inputPaterno"
-                                       class="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-2 border-slate-300 dark:border-slate-700 rounded-xl p-3 font-medium focus:ring-4 focus:ring-custom-primary/20 focus:border-custom-primary transition-all"
+                                       class="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-2 border-slate-300 dark:border-slate-700 rounded-xl p-3 font-medium focus:ring-4 focus:ring-custom-primary/20 focus:border-custom-primary transition-all" 
                                        placeholder="Ej: López">
                             </div>
                             <div id="contenedorMaterno">
                                 <label for="inputMaterno" class="block font-bold text-slate-800 dark:text-slate-200 mb-1.5">Apellido Materno</label>
                                 <input type="text" name="apellido_materno" value="{{ old('apellido_materno') }}" id="inputMaterno"
-                                       class="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-2 border-slate-300 dark:border-slate-700 rounded-xl p-3 font-medium focus:ring-4 focus:ring-custom-primary/20 focus:border-custom-primary transition-all"
+                                       class="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-2 border-slate-300 dark:border-slate-700 rounded-xl p-3 font-medium focus:ring-4 focus:ring-custom-primary/20 focus:border-custom-primary transition-all" 
                                        placeholder="Ej: Sánchez">
                             </div>
                         </div>
@@ -295,6 +295,7 @@
                                     <!-- Acciones -->
                                     <td class="p-4 text-center pr-6">
                                         <div class="flex items-center justify-center gap-2">
+                                            <!-- Reestablecer Contraseña -->
                                             <button type="button" 
                                                     onclick="abrirModalPassword('{{ $user->id }}', '{{ $user->username }}')"
                                                     class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-custom-primary rounded-xl transition-colors cursor-pointer border border-slate-200 dark:border-slate-700 shadow-2xs"
@@ -303,11 +304,12 @@
                                             </button>
 
                                             @if(auth()->id() !== $user->id)
+                                                <!-- Suspender / Reactivar -->
                                                 <form action="{{ route('usuarios.toggle-status', $user->id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de que deseas {{ $user->activo ? 'suspender' : 'reactivar' }} este usuario?')">
                                                     @csrf
                                                     @method('PATCH')
                                                     @if($user->activo)
-                                                        <button type="submit" title="Suspender acceso" aria-label="Suspender acceso" class="p-2.5 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-rose-700 dark:text-rose-400 rounded-xl transition-colors cursor-pointer border border-slate-200 dark:border-slate-700 shadow-2xs">
+                                                        <button type="submit" title="Suspender acceso" aria-label="Suspender acceso" class="p-2.5 hover:bg-amber-50 dark:hover:bg-amber-950/60 text-amber-700 dark:text-amber-400 rounded-xl transition-colors cursor-pointer border border-slate-200 dark:border-slate-700 shadow-2xs">
                                                             <span class="material-icons-round text-lg">block</span>
                                                         </button>
                                                     @else
@@ -315,6 +317,15 @@
                                                             <span class="material-icons-round text-lg">check_circle</span>
                                                         </button>
                                                     @endif
+                                                </form>
+
+                                                <!-- Eliminar Usuario Permanentemente -->
+                                                <form action="{{ route('usuarios.destroy', $user->id) }}" method="POST" onsubmit="return confirm('⚠️ ATENCIÓN: ¿Estás seguro de que deseas ELIMINAR PERMANENTEMENTE al usuario {{ $user->username }}? Esta acción borrará su cuenta y expediente.')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" title="Eliminar usuario" aria-label="Eliminar usuario" class="p-2.5 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-rose-600 dark:text-rose-400 rounded-xl transition-colors cursor-pointer border border-slate-200 dark:border-slate-700 shadow-2xs">
+                                                        <span class="material-icons-round text-lg">delete_forever</span>
+                                                    </button>
                                                 </form>
                                             @else
                                                 <span class="text-xs text-slate-500 dark:text-slate-400 italic font-black px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">Tú</span>
@@ -426,12 +437,10 @@
         const labelUser           = document.getElementById('labelUsername');
         const tituloPersonales    = document.getElementById('tituloSeccionPersonales');
 
-        // Mostrar siempre datos personales básicos
         secPersonales.classList.remove('hidden');
         inputNombre.setAttribute('required', 'required');
         inputPaterno.setAttribute('required', 'required');
 
-        // Resetear visibilidad por defecto
         secEstudiante.classList.add('hidden');
         secContactoPersonal.classList.add('hidden');
         contenedorMaterno.classList.remove('hidden');

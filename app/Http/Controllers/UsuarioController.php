@@ -223,4 +223,37 @@ class UsuarioController extends Controller
 
         return redirect()->back()->with('success', 'Contraseña actualizada correctamente.');
     }
+
+    public function destroy($id)
+    {
+        if (Auth::id() == $id) {
+            return redirect()->back()->with('error', 'No puedes eliminar tu propia cuenta de administrador.');
+        }
+
+        $usuario = DB::table('usuarios')->where('id', $id)->first();
+
+        if (!$usuario) {
+            return redirect()->back()->with('error', 'El usuario especificado no existe.');
+        }
+
+        try {
+            DB::transaction(function () use ($id) {
+                // Eliminar expediente vinculado en cualquiera de las tablas de perfil
+                DB::table('alumnos')->where('usuario_id', $id)->delete();
+                DB::table('docentes')->where('usuario_id', $id)->delete();
+                DB::table('administrador')->where('usuario_id', $id)->delete();
+                DB::table('coordinador')->where('usuario_id', $id)->delete();
+                DB::table('orientador')->where('usuario_id', $id)->delete();
+                DB::table('control_escolar')->where('usuario_id', $id)->delete();
+                DB::table('finanzas')->where('usuario_id', $id)->delete();
+
+                // Eliminar usuario principal
+                DB::table('usuarios')->where('id', $id)->delete();
+            });
+
+            return redirect()->back()->with('success', "El usuario {$usuario->username} y su expediente han sido eliminados permanentemente.");
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'No se pudo eliminar el usuario porque tiene registros académicos o pagos asociados.');
+        }
+    }
 }
