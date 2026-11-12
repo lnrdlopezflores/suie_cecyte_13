@@ -54,9 +54,9 @@ class UsuarioController extends Controller
             $user->nombre_completo = !empty($nombreCompleto) ? $nombreCompleto : null;
             $user->telefono_contacto = !empty($tel) ? $tel : null;
             
-            $letra1 = !empty($nom) ? substr($nom, 0, 1) : substr($user->username, 0, 1);
-            $letra2 = !empty($pat) ? substr($pat, 0, 1) : substr($user->username, 1, 1);
-            $user->iniciales = strtoupper($letra1 . $letra2);
+            $letra1 = !empty($nom) ? mb_substr($nom, 0, 1) : mb_substr($user->username, 0, 1);
+            $letra2 = !empty($pat) ? mb_substr($pat, 0, 1) : mb_substr($user->username, 1, 1);
+            $user->iniciales = mb_strtoupper($letra1 . $letra2);
 
             return $user;
         });
@@ -143,27 +143,27 @@ class UsuarioController extends Controller
                 case 'coordinador':
                     DB::table('coordinador')->insert([
                         'usuario_id' => $usuarioId,
-                        'nombre'     => trim($request->nombre),
-                        'apaterno'   => trim($request->apellido_paterno),
-                        'telefono'   => trim($request->telefono ?? ''),
+                        'nombre'     => encrypt(trim($request->nombre)),
+                        'apaterno'   => encrypt(trim($request->apellido_paterno)),
+                        'telefono'   => $request->filled('telefono') ? encrypt(trim($request->telefono)) : null,
                     ]);
                     break;
 
                 case 'orientador':
                     DB::table('orientador')->insert([
                         'usuario_id' => $usuarioId,
-                        'nombre'     => trim($request->nombre),
-                        'apaterno'   => trim($request->apellido_paterno),
-                        'telefono'   => trim($request->telefono ?? ''),
+                        'nombre'     => encrypt(trim($request->nombre)),
+                        'apaterno'   => encrypt(trim($request->apellido_paterno)),
+                        'telefono'   => $request->filled('telefono') ? encrypt(trim($request->telefono)) : null,
                     ]);
                     break;
 
                 case 'control escolar':
                     DB::table('control_escolar')->insert([
                         'usuario_id' => $usuarioId,
-                        'nombre'     => trim($request->nombre),
-                        'apaterno'   => trim($request->apellido_paterno),
-                        'telefono'   => trim($request->telefono ?? ''),
+                        'nombre'     => encrypt(trim($request->nombre)),
+                        'apaterno'   => encrypt(trim($request->apellido_paterno)),
+                        'telefono'   => $request->filled('telefono') ? encrypt(trim($request->telefono)) : null,
                     ]);
                     break;
 
