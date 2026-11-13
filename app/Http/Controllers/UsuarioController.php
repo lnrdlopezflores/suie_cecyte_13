@@ -134,9 +134,9 @@ class UsuarioController extends Controller
                 case 'administrador':
                     DB::table('administrador')->insert([
                         'usuario_id' => $usuarioId,
-                        'nombre'     => trim($request->nombre),
-                        'apaterno'   => trim($request->apellido_paterno),
-                        'amaterno'   => trim($request->apellido_materno ?? ''),
+                        'nombre'     => encrypt(trim($request->nombre)),
+                        'apaterno'   => encrypt(trim($request->apellido_paterno)),
+                        'amaterno'   => $request->filled('apellido_materno') ? encrypt(trim($request->apellido_materno)) : null,
                     ]);
                     break;
 
