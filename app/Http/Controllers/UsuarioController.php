@@ -170,10 +170,10 @@ class UsuarioController extends Controller
                 case 'finanzas':
                     DB::table('finanzas')->insert([
                         'usuario_id' => $usuarioId,
-                        'nombre'     => trim($request->nombre),
-                        'apaterno'   => trim($request->apellido_paterno),
-                        'amaterno'   => trim($request->apellido_materno ?? ''),
-                        'telefono'   => trim($request->telefono ?? ''),
+                        'nombre'     => encrypt(trim($request->nombre)),
+                        'apaterno'   => encrypt(trim($request->apellido_paterno)),
+                        'amaterno'   => $request->filled('apellido_materno') ? encrypt(trim($request->apellido_materno)) : null,
+                        'telefono'   => $request->filled('telefono') ? encrypt(trim($request->telefono)) : null,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
