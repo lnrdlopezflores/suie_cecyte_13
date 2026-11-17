@@ -3,7 +3,7 @@
 @section('content')
 <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
 
-    {{-- Lógica de Descifrado Seguro para el Nombre del Docente --}}
+    {{-- Lógica de Descifrado Seguro para el Nombre del Docente y validación de roles en titulación --}}
     @php
         $nombreDocente = 'Profesor';
         $docente = auth()->user()->docente;
@@ -22,16 +22,47 @@
             }
         }
 
-    $docenteAutenticado = \Illuminate\Support\Facades\DB::table('docentes')
-        ->where('usuario_id', \Illuminate\Support\Facades\Auth::id())
-        ->first();
+        $docenteAutenticado = \Illuminate\Support\Facades\DB::table('docentes')
+            ->where('usuario_id', \Illuminate\Support\Facades\Auth::id())
+            ->first();
 
-    $esJurado = false;
-    if ($docenteAutenticado) {
-        $esJurado = \Illuminate\Support\Facades\DB::table('proyecto_jurados')
-            ->where('docente_id', $docenteAutenticado->id)
-            ->exists();
-    }
+        $esJurado = false;
+        $tieneProyectosAsesorados = false;
+
+        if ($docenteAutenticado) {
+            $esJurado = \Illuminate\Support\Facades\DB::table('proyecto_jurados')
+                ->where('docente_id', $docenteAutenticado->id)
+                ->exists();
+
+            try {
+                if (\Illuminate\Support\Facades\Schema::hasTable('proyectos_titulacion')) {
+                    $columnasProyecto = \Illuminate\Support\Facades\Schema::getColumnListing('proyectos_titulacion');
+
+                    if (in_array('asesor_id', $columnasProyecto)) {
+                        $tieneProyectosAsesorados = \Illuminate\Support\Facades\DB::table('proyectos_titulacion')
+                            ->where('asesor_id', $docenteAutenticado->id)
+                            ->exists();
+                    } elseif (in_array('docente_id', $columnasProyecto)) {
+                        $tieneProyectosAsesorados = \Illuminate\Support\Facades\DB::table('proyectos_titulacion')
+                            ->where('docente_id', $docenteAutenticado->id)
+                            ->exists();
+                    }
+                }
+
+                if (!$tieneProyectosAsesorados) {
+                    foreach (['proyecto_asesores', 'proyecto_asesor', 'asesores_proyectos'] as $tablaAsesor) {
+                        if (\Illuminate\Support\Facades\Schema::hasTable($tablaAsesor)) {
+                            $tieneProyectosAsesorados = \Illuminate\Support\Facades\DB::table($tablaAsesor)
+                                ->where('docente_id', $docenteAutenticado->id)
+                                ->exists();
+                            if ($tieneProyectosAsesorados) break;
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                $tieneProyectosAsesorados = false;
+            }
+        }
     @endphp
 
     <!-- ENCABEZADO PRINCIPAL DE BIENVENIDA -->
@@ -54,12 +85,14 @@
                 </a>
             @endif
 
-            <!-- BOTÓN: PROYECTOS ASESORADOS -->
-            <a href="{{ route('docente.titulacion.asesorados') }}" 
-               class="px-3.5 py-2.5 bg-[#841B44] hover:bg-[#681535] dark:bg-rose-800 dark:hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer shrink-0">
-                <span class="material-icons-round text-base">supervisor_account</span> 
-                Proyectos Asesorados
-            </a>
+            @if($tieneProyectosAsesorados)
+                <!-- BOTÓN: PROYECTOS ASESORADOS -->
+                <a href="{{ route('docente.titulacion.asesorados') }}" 
+                   class="px-3.5 py-2.5 bg-[#841B44] hover:bg-[#681535] dark:bg-rose-800 dark:hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer shrink-0">
+                    <span class="material-icons-round text-base">supervisor_account</span> 
+                    Proyectos Asesorados
+                </a>
+            @endif
 
             <!-- BOTÓN NUEVO: DESCARGAR HORARIO -->
             <a href="{{ route('docente.horario.pdf') }}" target="_blank"
