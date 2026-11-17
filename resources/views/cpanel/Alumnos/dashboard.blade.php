@@ -11,6 +11,43 @@
 @endsection
 
 @section('content')
+@php
+    // Validación consistente con el menú lateral para el atajo de Horario Semanal
+    $tieneGrupoAtajo = !empty($infoAlumno->grupo_id) || !empty($infoAlumno->grupo);
+    $tieneMateriasAtajo = false;
+
+    if ($tieneGrupoAtajo) {
+        $grupoIdAtajo = $infoAlumno->grupo_id ?? null;
+
+        if (!$grupoIdAtajo && auth()->check()) {
+            $grupoIdAtajo = \Illuminate\Support\Facades\DB::table('alumnos')
+                ->where('usuario_id', auth()->id())
+                ->value('grupo_id');
+        }
+
+        if ($grupoIdAtajo) {
+            try {
+                foreach (['cargas', 'carga_academica', 'asignaciones', 'grupo_materia'] as $tablaCarga) {
+                    if (\Illuminate\Support\Facades\Schema::hasTable($tablaCarga)) {
+                        $totalCargas = \Illuminate\Support\Facades\DB::table($tablaCarga)
+                            ->where('grupo_id', $grupoIdAtajo)
+                            ->count();
+                        if ($totalCargas > 0) {
+                            $tieneMateriasAtajo = true;
+                        }
+                        break;
+                    }
+                }
+            } catch (\Throwable $e) {
+                $tieneMateriasAtajo = false;
+            }
+        }
+    }
+
+    $horarioHabilitado = ($tieneGrupoAtajo && $tieneMateriasAtajo);
+    $tipoBloqueoHorario = !$tieneGrupoAtajo ? 'ModuloBloqueadoSinGrupoNiMaterias' : 'ModuloBloqueadoSinMaterias';
+@endphp
+
 <main class="p-4 md:p-8 space-y-8 max-w-7xl w-full mx-auto text-sm md:text-base transition-colors duration-200">
     
     <!-- BANNER HERO DINÁMICO DE BIENVENIDA -->
@@ -60,7 +97,9 @@
                 <p class="text-base font-black text-slate-900 dark:text-slate-100">
                     {{ $infoAlumno->semestre ?? 'N/A' }}° Semestre
                 </p>
-                <span class="text-[11px] text-custom-primary font-bold block">Grupo "{{ $infoAlumno->grupo ?? 'U' }}"</span>
+                <span class="text-[11px] text-custom-primary font-bold block">
+                    {{ isset($infoAlumno->grupo) ? 'Grupo "' . $infoAlumno->grupo . '"' : 'Sin grupo asignado' }}
+                </span>
             </div>
         </div>
 
@@ -215,17 +254,33 @@
                 </div>
 
                 <div class="space-y-3">
-                    <!-- Horario y Asignaturas -->
-                    <a href="{{ route('indexmaterias.index') }}" 
-                       class="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 transition-all group">
-                        <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                                <span class="material-icons-round text-lg">view_week</span>
+                    <!-- Horario y Asignaturas (Con validación de grupo y materias asignadas) -->
+                    @if($horarioHabilitado)
+                        <a href="{{ route('indexmaterias.index') }}" 
+                           class="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 transition-all group">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                                    <span class="material-icons-round text-lg">view_week</span>
+                                </div>
+                                <span class="font-bold text-xs md:text-sm text-slate-800 dark:text-slate-200">Horario Semanal</span>
                             </div>
-                            <span class="font-bold text-xs md:text-sm text-slate-800 dark:text-slate-200">Horario Semanal</span>
-                        </div>
-                        <span class="material-icons-round text-slate-400 group-hover:translate-x-1 transition-transform text-base">chevron_right</span>
-                    </a>
+                            <span class="material-icons-round text-slate-400 group-hover:translate-x-1 transition-transform text-base">chevron_right</span>
+                        </a>
+                    @else
+                        <button type="button" onclick="mostrarAlertaBloqueo('{{ $tipoBloqueoHorario }}')" 
+                                class="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-800/30 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 transition-all group cursor-pointer text-left">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                                    <span class="material-icons-round text-lg">view_week</span>
+                                </div>
+                                <div class="truncate">
+                                    <span class="font-bold text-xs md:text-sm text-slate-600 dark:text-slate-300 block truncate">Horario Semanal</span>
+                                    <span class="text-[10px] font-semibold text-amber-600 dark:text-amber-400 block truncate">Sin asignación activa</span>
+                                </div>
+                            </div>
+                            <span class="material-icons-round text-amber-500 text-base shrink-0">lock</span>
+                        </button>
+                    @endif
 
                     <!-- Subir Comprobante de Pago -->
                     <a href="{{ route('alumnoPagos.index') }}" 
@@ -259,7 +314,7 @@
                         ¿Dudas o Aclaraciones?
                     </p>
                     <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                        Acude al departamento de Control Escolar en horario hábil para validación o corrección de cargas academicas.
+                        Acude a la Jefatura de Control Escolar en horario hábil para validación o corrección de grupo y cargas académicas.
                     </p>
                 </div>
             </div>
