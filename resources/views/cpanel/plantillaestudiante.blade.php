@@ -132,10 +132,12 @@
 <body class="bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 text-sm h-[100dvh] flex flex-col overflow-hidden transition-colors duration-200">
 
     @php
-        // Consulta única y optimizada del alumno autenticado (datos personales, grupo y titulación)
+        // Consulta única y optimizada del alumno autenticado (datos personales, grupo, materias y titulación)
         $alumnoNombreCompleto = auth()->user()->username ?? 'Alumno';
         $alumnoIniciales = strtoupper(substr(auth()->user()->username ?? 'AL', 0, 2));
         $semestreAlumno = 0;
+        $tieneGrupoAsignado = false;
+        $tieneMateriasAsignadas = false;
         $procesoHabilitado = false;
 
         if (auth()->check()) {
@@ -143,8 +145,10 @@
                 ->leftJoin('grupos', 'alumnos.grupo_id', '=', 'grupos.id')
                 ->select(
                     'alumnos.id',
+                    'alumnos.grupo_id',
                     'alumnos.nombre',
                     'alumnos.apellido_paterno',
+                    'grupos.id as grupo_valido_id',
                     'grupos.semestre'
                 )
                 ->where('alumnos.usuario_id', auth()->id())
@@ -173,6 +177,26 @@
                 }
 
                 $semestreAlumno = $alumnoGlobal->semestre ?? 0;
+                $tieneGrupoAsignado = !empty($alumnoGlobal->grupo_id) && !empty($alumnoGlobal->grupo_valido_id);
+
+                // Verificar si el grupo asignado cuenta con materias/cargas registradas
+                if ($tieneGrupoAsignado) {
+                    try {
+                        foreach (['cargas', 'carga_academica', 'asignaciones', 'grupo_materia'] as $tablaCarga) {
+                            if (\Illuminate\Support\Facades\Schema::hasTable($tablaCarga)) {
+                                $totalCargas = \Illuminate\Support\Facades\DB::table($tablaCarga)
+                                    ->where('grupo_id', $alumnoGlobal->grupo_id)
+                                    ->count();
+                                if ($totalCargas > 0) {
+                                    $tieneMateriasAsignadas = true;
+                                }
+                                break;
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        $tieneMateriasAsignadas = false;
+                    }
+                }
 
                 $proyectoGlobal = \Illuminate\Support\Facades\DB::table('proyectos_titulacion')
                     ->join('proyecto_alumno', 'proyectos_titulacion.id', '=', 'proyecto_alumno.proyecto_id')
@@ -191,6 +215,9 @@
                 $procesoHabilitado = ($semestreAlumno >= 6 && $proyectoGlobal && $proyectoGlobal->estatus === 'Aprobado' && $votosAprobados >= 2);
             }
         }
+
+        $materiasHabilitadas = ($tieneGrupoAsignado && $tieneMateriasAsignadas);
+        $tipoBloqueoMaterias = !$tieneGrupoAsignado ? 'ModuloBloqueadoSinGrupoNiMaterias' : 'ModuloBloqueadoSinMaterias';
     @endphp
 
     <!-- HEADER PRINCIPAL -->
@@ -240,7 +267,7 @@
                             {{ $alumnoNombreCompleto }}
                         </p>
                         <p class="text-[10px] text-custom-primary font-bold uppercase tracking-wider truncate">
-                            @yield('grupo_badge', 'Estudiante Activo')
+                            @yield('grupo_badge', $tieneGrupoAsignado ? 'Estudiante Activo' : 'Sin Grupo Asignado')
                         </p>
                     </div>
 
@@ -256,7 +283,7 @@
                         <p class="text-xs font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">{{ $alumnoNombreCompleto }}</p>
                         <p class="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">Matrícula: {{ auth()->user()->username ?? 'Sin matrícula' }}</p>
                         <span class="inline-block mt-1.5 px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-rose-50 dark:bg-rose-950/60 text-custom-primary border border-rose-200 dark:border-rose-900/60">
-                            @yield('grupo_badge', 'Rol: Estudiante')
+                            @yield('grupo_badge', $tieneGrupoAsignado ? 'Rol: Estudiante' : 'Sin Grupo Asignado')
                         </span>
                     </div>
 
@@ -337,11 +364,24 @@
                 <div>
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 block mb-2.5">Servicios Escolares</span>
                     <nav class="space-y-1">
-                        <a href="{{ route('indexmaterias.index') }}" 
-                           class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('indexmaterias.index') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
-                            <span class="material-icons-round text-lg shrink-0">auto_stories</span>
-                            <span class="truncate">Mis Materias</span>
-                        </a>
+                        <!-- MIS MATERIAS (Valida grupo y carga académica asignada) -->
+                        @if($materiasHabilitadas)
+                            <a href="{{ route('indexmaterias.index') }}" 
+                               class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('indexmaterias.index') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
+                                <span class="material-icons-round text-lg shrink-0">auto_stories</span>
+                                <span class="truncate">Mis Materias</span>
+                            </a>
+                        @else
+                            <button type="button" onclick="mostrarAlertaBloqueo('{{ $tipoBloqueoMaterias }}')" 
+                                    class="w-full flex items-center justify-between gap-2 px-3.5 py-3 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-800/50 dark:hover:bg-slate-900/50 hover:text-slate-400 transition-colors cursor-pointer">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <span class="material-icons-round text-lg shrink-0">auto_stories</span>
+                                    <span class="truncate">Mis Materias</span>
+                                </div>
+                                <span class="material-icons-round text-sm text-amber-500 shrink-0">lock</span>
+                            </button>
+                        @endif
+
                         <a href="{{ route('alumnoPagos.index') }}" 
                            class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('alumnoPagos.index') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
                             <span class="material-icons-round text-lg shrink-0">payments</span>
@@ -430,7 +470,7 @@
          class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-[60] flex items-center justify-center p-4 hidden">
         <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden p-6 md:p-7 text-center space-y-4 border border-slate-100 dark:border-slate-800 transition-colors duration-200">
             <div class="w-14 h-14 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center mx-auto border border-amber-100 dark:border-amber-900/60 shadow-3xs">
-                <span class="material-icons-round text-3xl">lock</span>
+                <span id="iconoBloqueo" class="material-icons-round text-3xl">lock</span>
             </div>
 
             <div class="space-y-1.5">
@@ -554,10 +594,21 @@
             }
 
             const modal = document.getElementById('modalBloqueo');
+            const icono = document.getElementById('iconoBloqueo');
             const titulo = document.getElementById('tituloBloqueo');
             const mensaje = document.getElementById('mensajeBloqueo');
 
-            if (tipo === 'ModuloBloqueadoSemestre') {
+            icono.innerText = 'lock';
+
+            if (tipo === 'ModuloBloqueadoSinGrupoNiMaterias') {
+                icono.innerText = 'info';
+                titulo.innerText = 'Grupo y Materias No Asignados';
+                mensaje.innerText = 'Aún no cuentas con un grupo ni materias asignadas en el sistema. En caso de tratarse de un error, por favor comunícate con la Jefatura de Control Escolar.';
+            } else if (tipo === 'ModuloBloqueadoSinMaterias') {
+                icono.innerText = 'info';
+                titulo.innerText = 'Materias No Asignadas';
+                mensaje.innerText = 'Tu grupo aún no cuenta con materias asignadas en el periodo actual. En caso de tratarse de un error, por favor comunícate con la Jefatura de Control Escolar.';
+            } else if (tipo === 'ModuloBloqueadoSemestre') {
                 titulo.innerText = 'Trámite no Disponible';
                 mensaje.innerText = 'El módulo de Proyectos de Titulación se habilita únicamente para estudiantes inscritos en el 6° semestre.';
             } else if (tipo === 'ModuloBloqueadoProyecto') {
