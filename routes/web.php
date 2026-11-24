@@ -33,6 +33,7 @@ use App\Http\Controllers\PersonalController;
 use App\Http\Controllers\ReportesIngresosController;
 use App\Http\Controllers\OrientacionGraficasController;
 use App\Http\Controllers\CobroDirectoController;
+use App\Http\Controllers\PasswordResetRolController;
 
 
 Route::get('/', function () {
@@ -52,6 +53,13 @@ Route::middleware(['auth'])->prefix('cuenta/seguridad')->group(function () {
     Route::get('/google-authenticator', [TwoFactorController::class, 'showSetup'])->name('2fa.setup');
     Route::post('/google-authenticator/activar', [TwoFactorController::class, 'enable'])->name('2fa.enable');
     Route::post('/google-authenticator/desactivar', [TwoFactorController::class, 'disable'])->name('2fa.disable');
+    Route::get('/seguridad/cambiar-password', [PasswordResetRolController::class, 'edit'])
+        ->name('password.rol.edit');
+
+    // Procesar actualización de contraseña
+    Route::put('/seguridad/cambiar-password', [PasswordResetRolController::class, 'update'])
+        ->name('password.rol.update');  
+
 });
 
 Route::middleware(['auth', 'rol:administrador'])->group(function () {

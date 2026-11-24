@@ -35,24 +35,13 @@ class LoginController extends Controller
             ]);
         }
 
-        // 3. Consulta parametrizada segura con PDO (Protegida nativamente contra SQLi)
-        $user = DB::table('usuarios')->where('username', $username)->first();
-
-        // 4. Verificación de estatus activo si el usuario existe
-        if ($user && empty($user->activo)) {
-            RateLimiter::hit($throttleKey);
-            throw ValidationException::withMessages([
-                'username' => ['El acceso a esta cuenta ha sido suspendido. Contacte a la administración.'],
-            ]);
-        }
-
-        // 5. Intento de autenticación seguro (Laravel vincula los parámetros automáticamente)
+        // 3. Intento de autenticación seguro (Laravel vincula los parámetros automáticamente)
         if (Auth::attempt(['username' => $username, 'password' => $password, 'activo' => 1])) {
             RateLimiter::clear($throttleKey);
 
             $userAuth = Auth::user();
 
-            // 6. Interceptor Google Authenticator (2FA)
+            // 4. Interceptor Google Authenticator (2FA)
             if (!empty($userAuth->google2fa_enabled) && $userAuth->google2fa_enabled) {
                 Auth::logout();
 
@@ -67,10 +56,16 @@ class LoginController extends Controller
             $request->session()->regenerate();
             $request->session()->put('2fa_passed', true);
 
+            // 5. Interceptor de Primer Ingreso (Obliga a cambiar contraseña antes de ir a su panel)
+            if (($userAuth->primer_ingreso ?? 0) == 1 || ($userAuth->cambiar_password ?? 0) == 1) {
+                return redirect()->route('password.rol.edit')
+                    ->with('primer_ingreso', true);
+            }
+
             return $this->getRedireccionPorRol($userAuth->rol);
         }
 
-        // 7. Registro de intento fallido
+        // 6. Registro de intento fallido
         RateLimiter::hit($throttleKey);
 
         throw ValidationException::withMessages([
@@ -81,7 +76,15 @@ class LoginController extends Controller
     public function redirectByRol()
     {
         if (Auth::check()) {
-            return $this->getRedireccionPorRol(Auth::user()->rol);
+            $userAuth = Auth::user();
+
+            // Si intenta entrar a otra vista sin haber cambiado su contraseña inicial
+            if (($userAuth->primer_ingreso ?? 0) == 1 || ($userAuth->cambiar_password ?? 0) == 1) {
+                return redirect()->route('password.rol.edit')
+                    ->with('primer_ingreso', true);
+            }
+
+            return $this->getRedireccionPorRol($userAuth->rol);
         }
 
         return redirect()->to('/');

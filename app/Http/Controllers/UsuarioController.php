@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class UsuarioController extends Controller
 {
@@ -39,20 +40,21 @@ class UsuarioController extends Controller
             ->orderBy('usuarios.id', 'desc')
             ->paginate(10);
 
-        // Desencriptar datos de forma segura
         $usuarios->getCollection()->transform(function ($user) {
-            $nom = $this->desencriptarDato($user->per_nombre);
-            $pat = $this->desencriptarDato($user->per_apaterno);
-            $mat = $this->desencriptarDato($user->per_amaterno);
-            $tel = $this->desencriptarDato($user->per_telefono);
+            $nom   = $this->desencriptarDato($user->per_nombre);
+            $pat   = $this->desencriptarDato($user->per_apaterno);
+            $mat   = $this->desencriptarDato($user->per_amaterno);
+            $tel   = $this->desencriptarDato($user->per_telefono);
+            $email = $this->desencriptarDato($user->email ?? null);
 
             $nombreCompleto = trim("{$pat} {$mat} {$nom}");
             if (empty($nombreCompleto)) {
                 $nombreCompleto = trim("{$nom} {$pat}");
             }
 
-            $user->nombre_completo = !empty($nombreCompleto) ? $nombreCompleto : null;
+            $user->nombre_completo   = !empty($nombreCompleto) ? $nombreCompleto : null;
             $user->telefono_contacto = !empty($tel) ? $tel : null;
+            $user->email             = !empty($email) ? $email : null;
             
             $letra1 = !empty($nom) ? mb_substr($nom, 0, 1) : mb_substr($user->username, 0, 1);
             $letra2 = !empty($pat) ? mb_substr($pat, 0, 1) : mb_substr($user->username, 1, 1);
@@ -62,6 +64,15 @@ class UsuarioController extends Controller
         });
 
         return view('cpanel.usuarios.createusuario', compact('usuarios'));
+    }
+
+    private function encriptarDato(?string $val): ?string
+    {
+        $limpio = trim((string) $val);
+        if ($limpio === '') {
+            return null;
+        }
+        return encrypt($limpio);
     }
 
     private function desencriptarDato(?string $val): string
@@ -77,7 +88,6 @@ class UsuarioController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Validación con lista blanca incluyendo Finanzas
         $request->validate([
             'username'         => 'required|string|max:50|unique:usuarios,username',
             'password'         => 'required|string|min:6|max:72',
@@ -92,88 +102,91 @@ class UsuarioController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
-            // Alta en la tabla base usuarios
-            $usuarioId = DB::table('usuarios')->insertGetId([
+            $datosUsuario = [
                 'username'   => trim($request->username),
                 'password'   => Hash::make($request->password),
                 'rol'        => $request->rol,
-                'email'      => $request->filled('correo') ? trim($request->correo) : null,
+                'email'      => $this->encriptarDato($request->correo),
                 'activo'     => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]);
+            ];
+
+            // Activar marca de primer ingreso si existe la columna en la tabla
+            if (Schema::hasColumn('usuarios', 'primer_ingreso')) {
+                $datosUsuario['primer_ingreso'] = 1;
+            }
+
+            $usuarioId = DB::table('usuarios')->insertGetId($datosUsuario);
 
             $rolNormalizado = strtolower(trim($request->rol));
 
-            // Inserción en la tabla de perfil según el rol
             switch ($rolNormalizado) {
                 case 'estudiante':
                     DB::table('alumnos')->insert([
                         'usuario_id'       => $usuarioId,
-                        'nombre'           => trim($request->nombre),
-                        'apellido_paterno' => trim($request->apellido_paterno),
-                        'apellido_materno' => trim($request->apellido_materno ?? ''),
-                        'nombre_tutor'     => trim($request->nombre_tutor ?? ''),
-                        'telefono_tutor'   => trim($request->telefono_tutor ?? ''),
-                        'activo'           => 1,
+                        'nombre'           => $this->encriptarDato($request->nombre),
+                        'apellido_paterno' => $this->encriptarDato($request->apellido_paterno),
+                        'apellido_materno' => $this->encriptarDato($request->apellido_materno),
+                        'nombre_tutor'     => $this->encriptarDato($request->nombre_tutor),
+                        'telefono_tutor'   => $this->encriptarDato($request->telefono_tutor),
                     ]);
                     break;
 
                 case 'docente':
                     DB::table('docentes')->insert([
                         'usuario_id'       => $usuarioId,
-                        'nombre'           => trim($request->nombre),
-                        'apellido_paterno' => trim($request->apellido_paterno),
-                        'apellido_materno' => trim($request->apellido_materno ?? ''),
-                        'correo'           => trim($request->correo ?? ''),
-                        'telefono'         => trim($request->telefono ?? ''),
-                        'activo'           => 1,
+                        'nombre'           => $this->encriptarDato($request->nombre),
+                        'apellido_paterno' => $this->encriptarDato($request->apellido_paterno),
+                        'apellido_materno' => $this->encriptarDato($request->apellido_materno),
+                        'correo'           => $this->encriptarDato($request->correo),
+                        'telefono'         => $this->encriptarDato($request->telefono),
                     ]);
                     break;
 
                 case 'administrador':
                     DB::table('administrador')->insert([
                         'usuario_id' => $usuarioId,
-                        'nombre'     => encrypt(trim($request->nombre)),
-                        'apaterno'   => encrypt(trim($request->apellido_paterno)),
-                        'amaterno'   => $request->filled('apellido_materno') ? encrypt(trim($request->apellido_materno)) : null,
+                        'nombre'     => $this->encriptarDato($request->nombre),
+                        'apaterno'   => $this->encriptarDato($request->apellido_paterno),
+                        'amaterno'   => $this->encriptarDato($request->apellido_materno),
                     ]);
                     break;
 
                 case 'coordinador':
                     DB::table('coordinador')->insert([
                         'usuario_id' => $usuarioId,
-                        'nombre'     => encrypt(trim($request->nombre)),
-                        'apaterno'   => encrypt(trim($request->apellido_paterno)),
-                        'telefono'   => $request->filled('telefono') ? encrypt(trim($request->telefono)) : null,
+                        'nombre'     => $this->encriptarDato($request->nombre),
+                        'apaterno'   => $this->encriptarDato($request->apellido_paterno),
+                        'telefono'   => $this->encriptarDato($request->telefono),
                     ]);
                     break;
 
                 case 'orientador':
                     DB::table('orientador')->insert([
                         'usuario_id' => $usuarioId,
-                        'nombre'     => encrypt(trim($request->nombre)),
-                        'apaterno'   => encrypt(trim($request->apellido_paterno)),
-                        'telefono'   => $request->filled('telefono') ? encrypt(trim($request->telefono)) : null,
+                        'nombre'     => $this->encriptarDato($request->nombre),
+                        'apaterno'   => $this->encriptarDato($request->apellido_paterno),
+                        'telefono'   => $this->encriptarDato($request->telefono),
                     ]);
                     break;
 
                 case 'control escolar':
                     DB::table('control_escolar')->insert([
                         'usuario_id' => $usuarioId,
-                        'nombre'     => encrypt(trim($request->nombre)),
-                        'apaterno'   => encrypt(trim($request->apellido_paterno)),
-                        'telefono'   => $request->filled('telefono') ? encrypt(trim($request->telefono)) : null,
+                        'nombre'     => $this->encriptarDato($request->nombre),
+                        'apaterno'   => $this->encriptarDato($request->apellido_paterno),
+                        'telefono'   => $this->encriptarDato($request->telefono),
                     ]);
                     break;
 
                 case 'finanzas':
                     DB::table('finanzas')->insert([
                         'usuario_id' => $usuarioId,
-                        'nombre'     => encrypt(trim($request->nombre)),
-                        'apaterno'   => encrypt(trim($request->apellido_paterno)),
-                        'amaterno'   => $request->filled('apellido_materno') ? encrypt(trim($request->apellido_materno)) : null,
-                        'telefono'   => $request->filled('telefono') ? encrypt(trim($request->telefono)) : null,
+                        'nombre'     => $this->encriptarDato($request->nombre),
+                        'apaterno'   => $this->encriptarDato($request->apellido_paterno),
+                        'amaterno'   => $this->encriptarDato($request->apellido_materno),
+                        'telefono'   => $this->encriptarDato($request->telefono),
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
@@ -181,7 +194,7 @@ class UsuarioController extends Controller
             }
         });
 
-        return redirect()->route('usuarios.index')->with('success', 'Usuario y expediente institucional registrados correctamente.');
+        return redirect()->route('usuarios.index')->with('success', 'Usuario y expediente institucional registrados y cifrados correctamente.');
     }
 
     public function toggleStatus($id)
@@ -216,10 +229,17 @@ class UsuarioController extends Controller
             'password.min'       => 'La contraseña debe tener al menos 6 caracteres.',
         ]);
 
-        DB::table('usuarios')->where('id', $id)->update([
+        $datos = [
             'password'   => Hash::make($request->input('password')),
             'updated_at' => now(),
-        ]);
+        ];
+
+        // Al restablecer la clave desde admin, también se solicita cambio en su próximo ingreso
+        if (Schema::hasColumn('usuarios', 'primer_ingreso')) {
+            $datos['primer_ingreso'] = 1;
+        }
+
+        DB::table('usuarios')->where('id', $id)->update($datos);
 
         return redirect()->back()->with('success', 'Contraseña actualizada correctamente.');
     }
@@ -238,7 +258,6 @@ class UsuarioController extends Controller
 
         try {
             DB::transaction(function () use ($id) {
-                // Eliminar expediente vinculado en cualquiera de las tablas de perfil
                 DB::table('alumnos')->where('usuario_id', $id)->delete();
                 DB::table('docentes')->where('usuario_id', $id)->delete();
                 DB::table('administrador')->where('usuario_id', $id)->delete();
@@ -247,7 +266,6 @@ class UsuarioController extends Controller
                 DB::table('control_escolar')->where('usuario_id', $id)->delete();
                 DB::table('finanzas')->where('usuario_id', $id)->delete();
 
-                // Eliminar usuario principal
                 DB::table('usuarios')->where('id', $id)->delete();
             });
 
