@@ -63,8 +63,21 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @foreach($catalogo as $clave => $item)
             @php
-                $doc = $documentosSubidos->get($clave);
+                // Búsqueda flexible (ignora diferencias de mayúsculas, minúsculas, acentos o espacios)
+                $claveNormalizada = \Illuminate\Support\Str::lower(\Illuminate\Support\Str::ascii(trim((string) $clave)));
+
+                $doc = $documentosSubidos->get($clave)
+                    ?? $documentosSubidos->first(function ($registro, $key) use ($claveNormalizada) {
+                        $tipoDb = \Illuminate\Support\Str::lower(\Illuminate\Support\Str::ascii(trim((string) ($registro->tipo_documento ?? $key))));
+                        return $tipoDb === $claveNormalizada;
+                    });
+
                 $estatus = $doc->estatus ?? 'Sin_Subir';
+
+                // Limpiar ruta por si incluye prefijo 'public/' o barras iniciales
+                $rutaLimpia = $doc && !empty($doc->ruta_archivo)
+                    ? ltrim(preg_replace('#^public/#', '', $doc->ruta_archivo), '/')
+                    : null;
             @endphp
 
             <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xs p-6 flex flex-col justify-between space-y-5 transition-all hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700">
@@ -113,17 +126,19 @@
                                     {{ $doc->nombre_archivo }}
                                 </span>
                                 <span class="font-black text-slate-400 dark:text-slate-500 text-[10px] bg-slate-200/60 dark:bg-slate-700 px-2 py-0.5 rounded-md">
-                                    v{{ $doc->version }}
+                                    v{{ $doc->version ?? 1 }}
                                 </span>
                             </div>
 
-                            <div class="pt-1 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between">
-                                <a href="{{ asset('storage/' . $doc->ruta_archivo) }}" target="_blank"
-                                   class="text-xs font-extrabold text-custom-primary hover:underline flex items-center gap-1">
-                                    <span class="material-icons-round text-sm">picture_as_pdf</span>
-                                    <span>Visualizar Documento</span>
-                                </a>
-                            </div>
+                            @if($rutaLimpia)
+                                <div class="pt-1 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between">
+                                    <a href="{{ asset('storage/' . $rutaLimpia) }}" target="_blank" rel="noopener noreferrer"
+                                       class="text-xs font-extrabold text-custom-primary hover:underline flex items-center gap-1">
+                                        <span class="material-icons-round text-sm">picture_as_pdf</span>
+                                        <span>Visualizar Documento</span>
+                                    </a>
+                                </div>
+                            @endif
                         </div>
 
                         {{-- OBSERVACIONES EN CASO DE RECHAZO --}}

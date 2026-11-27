@@ -85,14 +85,14 @@
                 </a>
             @endif
 
-            @if($tieneProyectosAsesorados)
+          
                 <!-- BOTÓN: PROYECTOS ASESORADOS -->
                 <a href="{{ route('docente.titulacion.asesorados') }}" 
                    class="px-3.5 py-2.5 bg-[#841B44] hover:bg-[#681535] dark:bg-rose-800 dark:hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer shrink-0">
                     <span class="material-icons-round text-base">supervisor_account</span> 
                     Proyectos Asesorados
                 </a>
-            @endif
+
 
             <!-- BOTÓN NUEVO: DESCARGAR HORARIO -->
             <a href="{{ route('docente.horario.pdf') }}" target="_blank"

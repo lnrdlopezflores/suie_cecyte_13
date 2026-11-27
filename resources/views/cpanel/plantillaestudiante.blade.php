@@ -389,7 +389,7 @@
                         </a>
 
                         <!-- 1. MÓDULO: PROYECTOS DE TITULACIÓN (Solo 6to Semestre) -->
-                        @if($semestreAlumno >= 6)
+                        @if($semestreAlumno >= 5)
                             <a href="{{ route('titulacion.index') }}" 
                                class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-bold transition-all {{ request()->routeIs('titulacion.*') ? 'bg-custom-primary text-white shadow-xs' : 'hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-100 text-slate-300' }}">
                                 <span class="material-icons-round text-lg shrink-0">history_edu</span>

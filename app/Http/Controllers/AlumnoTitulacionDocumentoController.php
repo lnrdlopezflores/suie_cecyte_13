@@ -14,7 +14,7 @@ class AlumnoTitulacionDocumentoController extends Controller
         'Certificado_Secundaria'     => ['nombre' => 'Certificado de Secundaria', 'icono' => 'school'],
         'Constancia_Liberacion_SS'  => ['nombre' => 'Constancia de Liberación de Servicio Social', 'icono' => 'assignment_turned_in'],
         'Acta_Nacimiento'           => ['nombre' => 'Acta de Nacimiento Actualizada', 'icono' => 'description'],
-        'Cetificado_Bachillerato'   => ['nombre' => 'Certificado de Bachillerato', 'icono' => 'workspace_premium'],
+        'Certificado_Bachillerato'   => ['nombre' => 'Certificado de Bachillerato', 'icono' => 'workspace_premium'],
         'Curp'                      => ['nombre' => 'Clave Única de Registro de Población (CURP)', 'icono' => 'badge'],
         'Acta_Recepcion_Profesional'=> ['nombre' => 'Acta de Recepción Profesional', 'icono' => 'history_edu'],
     ];
